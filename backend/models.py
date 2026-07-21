@@ -1,0 +1,78 @@
+#data model focused, create tables to db
+
+from __future__ import annotations
+from datetime import datetime, UTC, time
+from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, Time,Float, Boolean, UniqueConstraint
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from database import Base 
+
+#create user table and its column and relationship to other tables  
+class User(Base):
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True, autoincrement=True)
+    username: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
+    email: Mapped[str] = mapped_column(String(120), unique=True, nullable=False)
+    image_file: Mapped[str | None] = mapped_column(String(200), nullable=True, default=None,)
+
+    reviews: Mapped[list[Review]] = relationship(back_populates="reviewer", cascade="all, delete-orphan")
+ 
+    @property
+    def image_path(self) -> str:
+        if self.image_file:
+            return f"/media/profile_pics/{self.image_file}"
+        return "/static/profile_pics/default.jpg"
+
+# user can create their review on any dishes and can see other's review    
+class Review(Base):
+    __tablename__ = "reviews"
+
+    __table_args__ = (
+    UniqueConstraint("user_id", "dish_id", name="uq_user_dish_review"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    rating: Mapped[int] = mapped_column(nullable=False, default=5)
+    # Storing tags as a simple comma-separated string (e.g., "spicy,big_portion,good_value")
+    tags: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    comment: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    #FK
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
+    dish_id: Mapped[int] = mapped_column(ForeignKey("dishes.id", ondelete="CASCADE"), index=True, nullable=False)
+
+    reviewer: Mapped[User] = relationship(back_populates="reviews")
+    dish: Mapped[Dish] = relationship(back_populates="reviews")
+
+class Dish(Base): 
+    __tablename__ = "dishes"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String(100), index=True)
+    price: Mapped[float] = mapped_column(Float, nullable=False)
+    description: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    food_category: Mapped[str] = mapped_column(String(50), index=True)
+    average_rating: Mapped[float] = mapped_column(Float, default=0.0)
+    is_spicy: Mapped[bool] = mapped_column(Boolean, nullable=True)
+
+    restaurant_id: Mapped[int] = mapped_column(ForeignKey("restaurants.id", ondelete="CASCADE"), index=True, nullable=False)
+
+    restaurant: Mapped[Restaurant] = relationship(back_populates="dishes")
+    reviews: Mapped[list[Review]] = relationship(back_populates="dish", cascade="all, delete-orphan")
+
+class Restaurant(Base):
+    __tablename__ = "restaurants"
+    
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String(100), index=True)
+    address: Mapped[str] = mapped_column(String(255), nullable=True)
+    lat: Mapped[float | None] = mapped_column(Float, nullable=True)
+    lon: Mapped[float | None] = mapped_column(Float, nullable=True)
+    map_link: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    opening_hr: Mapped[time | None] = mapped_column(Time, nullable=True)
+    closing_hr: Mapped[time | None] = mapped_column(Time, nullable=True)
+    opening_days: Mapped[str | None] = mapped_column(String(60), default="Everyday", nullable=True)
+    # 🔄 RELATIONSHIP: 1 Restaurant -> Many Dishes
+    dishes: Mapped[list[Dish]] = relationship(back_populates="restaurant", cascade="all, delete-orphan")
+
+
