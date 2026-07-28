@@ -18,7 +18,7 @@ class RestaurantBase(BaseModel):
 
 class DishBase(BaseModel): 
     price: float = Field(gt=0)
-    food_category:str = Field(min_length=2, max_length=50,)
+    menu_category:str = Field(min_length=2, max_length=50,)
     is_spicy: bool = Field(default=False,)
     description: str | None =  Field(default=None)
 
@@ -30,7 +30,7 @@ class DishCreate(DishBase):
 class DishUpdate(BaseModel):
     name: str | None = Field(default=None, validation_alias="dish_name", min_length=2, max_length=50)
     price: float | None = Field(default=None, gt=0)
-    food_category: str | None = Field(default=None, min_length=2, max_length=50)
+    menu_category: str | None = Field(default=None, min_length=2, max_length=50)
     is_spicy: bool | None = Field(default=None)
     description: str | None = Field(default=None)
 
@@ -38,8 +38,10 @@ class DishUpdate(BaseModel):
 class DishResponse(DishBase): 
     model_config = ConfigDict(from_attributes=True)
     
+    #add photo file path later
     dish_id: int = Field(validation_alias="id")
     dish_name: str = Field(validation_alias="name")
+    average_rating: float
     restaurant_id: int = Field(validation_alias=AliasPath("restaurant", "id"))
     restaurant_name: str = Field(validation_alias=AliasPath("restaurant", "name"))
     restaurant_address: str | None = Field(validation_alias=AliasPath("restaurant", "address"))

@@ -88,33 +88,33 @@ async def seed_data(session: AsyncSession):
 
     dish_data = [
         # Golden Wok (Index 0)
-        {"name": "Kung Pao Chicken", "price": 15.50, "description": "Spicy chicken with peanuts", "food_category": "Chicken", "is_spicy": True, "r_idx": 0},
-        {"name": "Dim Sum Platter", "price": 12.00, "description": "Steamed dumplings", "food_category": "Appetizer", "is_spicy": False, "r_idx": 0},
+        {"name": "Kung Pao Chicken", "price": 15.50, "description": "Spicy chicken with peanuts", "menu_category": "Mains", "is_spicy": True, "average_rating": 4.5, "r_idx": 0},
+        {"name": "Dim Sum Platter", "price": 12.00, "description": "Steamed dumplings", "menu_category": "Appetizers", "is_spicy": False, "average_rating": 4.8, "r_idx": 0},
 
         # Pasta Bella (Index 1)
-        {"name": "Margherita Pizza", "price": 14.99, "description": "Fresh mozzarella and basil", "food_category": "Pizza", "is_spicy": False, "r_idx": 1},
-        {"name": "Truffle Carbonara", "price": 18.50, "description": "Creamy pasta with black truffle", "food_category": "Pasta", "is_spicy": False, "r_idx": 1},
-        {"name": "Classic Lasagna", "price": 16.00, "description": "Layered beef lasagna", "food_category": "Pasta", "is_spicy": False, "r_idx": 1},
+        {"name": "Margherita Pizza", "price": 14.99, "description": "Fresh mozzarella and basil", "menu_category": "Mains", "is_spicy": False, "average_rating": 4.2, "r_idx": 1},
+        {"name": "Truffle Carbonara", "price": 18.50, "description": "Creamy pasta with black truffle", "menu_category": "Mains", "is_spicy": False, "average_rating": 4.9, "r_idx": 1},
+        {"name": "Classic Lasagna", "price": 16.00, "description": "Layered beef lasagna", "menu_category": "Mains", "is_spicy": False, "average_rating": 4.0, "r_idx": 1},
 
         # Taco Loco (Index 2)
-        {"name": "Street Tacos Trio", "price": 11.00, "description": "Three steak tacos with salsa", "food_category": "Tacos", "is_spicy": True, "r_idx": 2},
-        {"name": "Cheesy Quesadilla", "price": 9.50, "description": "Warm melted blend of cheeses", "food_category": "Appetizer", "is_spicy": False, "r_idx": 2},
+        {"name": "Street Tacos Trio", "price": 11.00, "description": "Three steak tacos with salsa", "menu_category": "Mains", "is_spicy": True, "average_rating": 4.6, "r_idx": 2},
+        {"name": "Cheesy Quesadilla", "price": 7.50, "description": "Warm melted blend of cheeses, perfect for little ones", "menu_category": "Kids", "is_spicy": False, "average_rating": 4.8, "r_idx": 2},
 
         # Sushi Zen (Index 3)
-        {"name": "Dragon Roll", "price": 16.00, "description": "Eel and avocado roll", "food_category": "Sushi", "is_spicy": False, "r_idx": 3},
-        {"name": "Spicy Tonkotsu Ramen", "price": 15.00, "description": "Rich pork broth noodle soup", "food_category": "Noodles", "is_spicy": True, "r_idx": 3},
-        {"name": "Salmon Sashimi", "price": 18.00, "description": "Slices of fresh raw salmon", "food_category": "Sushi", "is_spicy": False, "r_idx": 3},
+        {"name": "Dragon Roll", "price": 16.00, "description": "Eel and avocado roll", "menu_category": "Mains", "is_spicy": False, "average_rating": 4.7, "r_idx": 3},
+        {"name": "Spicy Tonkotsu Ramen", "price": 15.00, "description": "Rich pork broth noodle soup", "menu_category": "Mains", "is_spicy": True, "average_rating": 4.5, "r_idx": 3},
+        {"name": "Salmon Sashimi", "price": 18.00, "description": "Slices of fresh raw salmon", "menu_category": "Appetizers", "is_spicy": False, "average_rating": 4.9, "r_idx": 3},
+        {"name": "Iced Matcha Latte", "price": 5.50, "description": "Refreshing cold green tea with milk", "menu_category": "Beverages", "is_spicy": False, "average_rating": 4.6, "r_idx": 3},
 
         # Burger Joint (Index 4)
-        {"name": "Double Smash Burger", "price": 13.50, "description": "Two patties with house sauce", "food_category": "Burger", "is_spicy": False, "r_idx": 4},
-        {"name": "Buffalo Chicken Wings", "price": 12.00, "description": "Crispy wings tossed in hot sauce", "food_category": "Appetizer", "is_spicy": True, "r_idx": 4},
-        {"name": "Sweet Potato Fries", "price": 6.00, "description": "Crispy seasoned fries", "food_category": "Sides", "is_spicy": False, "r_idx": 4},
+        {"name": "Double Smash Burger", "price": 13.50, "description": "Two patties with house sauce", "menu_category": "Mains", "is_spicy": False, "average_rating": 4.3, "r_idx": 4},
+        {"name": "Buffalo Chicken Wings", "price": 12.00, "description": "Crispy wings tossed in hot sauce", "menu_category": "Appetizers", "is_spicy": True, "average_rating": 4.1, "r_idx": 4},
+        {"name": "Sweet Potato Fries", "price": 6.00, "description": "Crispy seasoned fries", "menu_category": "Sides", "is_spicy": False, "average_rating": 4.4, "r_idx": 4},
 
         # The Green Leaf (Index 5)
-        {"name": "Avocado Toast", "price": 10.50, "description": "Sourdough with poached egg", "food_category": "Breakfast", "is_spicy": False, "r_idx": 5},
-        {"name": "Acai Superfood Bowl", "price": 12.00, "description": "With fresh berries and granola", "food_category": "Breakfast", "is_spicy": False, "r_idx": 5}
+        {"name": "Avocado Toast", "price": 10.50, "description": "Sourdough with poached egg", "menu_category": "Mains", "is_spicy": False, "average_rating": 4.2, "r_idx": 5},
+        {"name": "Acai Superfood Bowl", "price": 12.00, "description": "Sweet blended berries topped with granola", "menu_category": "Dessert", "is_spicy": False, "average_rating": 4.8, "r_idx": 5}
     ]
-
     for d_dict in dish_data:
         r_index = d_dict.pop("r_idx")
         d_dict["restaurant_id"] = restaurants[r_index].id

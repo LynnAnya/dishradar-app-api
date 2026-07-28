@@ -1,6 +1,6 @@
 from contextlib import asynccontextmanager
 from typing import Annotated
-from fastapi import Depends, FastAPI, HTTPException, Request, status
+from fastapi import Depends, FastAPI, HTTPException, Request, status, Query
 from fastapi.exception_handlers import (
     http_exception_handler,
     request_validation_exception_handler
@@ -59,9 +59,10 @@ app.add_middleware(
 # home main
 ################
 # all dishes (not details, before user click)
-@app.get("/", response_model=list[DishResponse], name="dishes")
-@app.get("/dishes",  include_in_schema=False, response_model=list[DishResponse], name="dishes")
-async def get_home(db: Annotated[AsyncSession, Depends(get_db)]):
+@app.get("/", include_in_schema=False, response_model=list[DishResponse], name="dishes")
+@app.get("/dishes", response_model=list[DishResponse], name="dishes")
+async def get_home(db: Annotated[AsyncSession, Depends(get_db)]
+):
     result = await db.execute(select(models.Dish).options(joinedload(models.Dish.restaurant)))
     dishes = result.scalars().all()
     return dishes
@@ -69,6 +70,35 @@ async def get_home(db: Annotated[AsyncSession, Depends(get_db)]):
 ###############
 # Search activities 
 ###############
+#user search/filter -> get list 
+@app.get("/search/dishes", response_model=list[DishResponse])
+async def get_search_dishes(
+    db: Annotated[AsyncSession, Depends(get_db)],
+    q: Annotated[str | None, Query(description="Search dish name")] = None,
+    max_price: Annotated[float | None, Query(ge=0, description="Max price filter")] = None,
+    min_rating: Annotated[float | None, Query(ge=0.0, le=5.0, description="Minimum rating filter (0-5)")] = None,
+    menu_category: Annotated[str | None, Query(description="Category filter")] = None,
+):  
+    query = select(models.Dish).options(joinedload(models.Dish.restaurant))
+
+    if q and q.strip():
+        query = query.where(models.Dish.name.ilike(f"%{q.strip()}%"))
+
+    if max_price is not None:
+        query = query.where(models.Dish.price <= max_price)
+
+    # Filter by minimum rating (0 to 5)
+    if min_rating is not None:
+        query = query.where(models.Dish.average_rating >= min_rating)
+
+    if menu_category:
+       query = query.where(models.Dish.menu_category.ilike(menu_category.strip()))
+
+    result = await db.execute(query)
+    dishes = result.scalars().unique().all()
+    return dishes
+
+
 # user click on specfic dish from specific restaurant
 @app.get("/dishes/{dish_id}", response_model=DishDetailResponse)
 async def get_dish(dish_id: int, db: Annotated[AsyncSession, Depends(get_db) ]):
@@ -99,11 +129,9 @@ async def get_reviews(dish_id: int, db: Annotated[AsyncSession, Depends(get_db)]
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Dish not found")
     return dish.reviews
 
-# get rest
-
 
 ###############
-# Review activities 
+# Review activities from specific user 
 ###############
 
 # get all reviews from current user
@@ -293,11 +321,11 @@ async def delete_user(user_id: int, db: Annotated[AsyncSession, Depends(get_db)]
 
 
 ############
-# create new dish - admin later
+# create new dish - admin later -DishCreate
 ############
 #create new dish (for admin appending new dish) --jsut testing
 # avoid duplicate input for new dish -- to do
-
+#update dish data - DishUpdate
 
 ##############
 # after this one is not linked to flutter yet 

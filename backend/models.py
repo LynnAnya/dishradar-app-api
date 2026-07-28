@@ -51,7 +51,7 @@ class Dish(Base):
     name: Mapped[str] = mapped_column(String(100), index=True)
     price: Mapped[float] = mapped_column(Float, nullable=False)
     description: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    food_category: Mapped[str] = mapped_column(String(50), index=True)
+    menu_category: Mapped[str] = mapped_column(String(50), index=True)
     average_rating: Mapped[float] = mapped_column(Float, default=0.0)
     is_spicy: Mapped[bool] = mapped_column(Boolean, nullable=True)
 
