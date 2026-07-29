@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/dish.dart';
 import '../services/search_api_service.dart';
+import 'dish_detail_screen.dart'; 
+import 'profile_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -130,11 +132,11 @@ class _MainScreenState extends State<MainScreen> {
     return BoxDecoration(
       color: color ?? cardColor,
       borderRadius: BorderRadius.circular(borderRadius),
-      border: Border.all(color: outlineColor, width: 1.0), // Slightly thinner border
+      border: Border.all(color: outlineColor, width: 1.0),
       boxShadow: [
         BoxShadow(
           color: outlineColor,
-          offset: const Offset(2, 2), // Hard offset shadow
+          offset: const Offset(2, 2),
           blurRadius: 0, 
         ),
       ],
@@ -150,12 +152,17 @@ class _MainScreenState extends State<MainScreen> {
         elevation: 0,
         title: Text(
           'Find your next meal 🍔',
-          style: TextStyle(color: textMain, fontWeight: FontWeight.w600, fontSize: 22), // w900 reduced to bold
+          style: TextStyle(color: textMain, fontWeight: FontWeight.w600, fontSize: 22),
         ),
         actions: [
           IconButton(
-            icon: Icon(Icons.location_on_outlined, color: textMain, size: 28),
-            onPressed: () {},
+            icon: Icon(Icons.person_outline_rounded, color: textMain, size: 28),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ProfileScreen())
+              );
+            },
           )
         ],
       ),
@@ -214,7 +221,7 @@ class _MainScreenState extends State<MainScreen> {
               children: [
                 _buildSortFilter(),
                 _buildPriceFilter(),
-                _buildRatingFilter(), // <-- FIXED OVERFLOW HERE!
+                _buildRatingFilter(),
                 _buildCategoryFilter(),
                 const SizedBox(height: 16),
                 
@@ -320,7 +327,7 @@ class _MainScreenState extends State<MainScreen> {
         decoration: BoxDecoration(
           color: isSelected ? accentColor : Colors.white,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: outlineColor, width: 1.5), // Softer border width
+          border: Border.all(color: outlineColor, width: 1.5),
           boxShadow: isSelected 
               ? [BoxShadow(color: outlineColor, offset: const Offset(2, 2), blurRadius: 0)]
               : null, 
@@ -329,7 +336,7 @@ class _MainScreenState extends State<MainScreen> {
           label,
           style: TextStyle(
             color: textMain,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500, // Reduced weight
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
             fontSize: 14,
           ),
         ),
@@ -412,7 +419,6 @@ class _MainScreenState extends State<MainScreen> {
         children: [
           Text('Minimum Rating', style: TextStyle(color: textMain, fontSize: 15, fontWeight: FontWeight.w600)),
           const SizedBox(height: 10),
-          // 🎯 THE FIX: Wrapped in SingleChildScrollView so it scrolls without overflowing!
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             physics: const BouncingScrollPhysics(),
@@ -473,112 +479,123 @@ class _MainScreenState extends State<MainScreen> {
       if (city.isNotEmpty) city,
     ].join(' • ');
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16.0),
-      padding: const EdgeInsets.all(12.0),
-      decoration: _doodleDecoration(),
-      child: Row(
-        children: [
-          // 1. Food Image
-          Container(
-            width: 100,
-            height: 100,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: outlineColor, width: 1.5), 
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: dish.imageUrl != null && dish.imageUrl!.isNotEmpty
-                  ? Image.network(dish.imageUrl!, fit: BoxFit.cover)
-                  : Container(
-                      color: const Color(0xFFF0F0F0),
-                      child: Icon(Icons.fastfood_outlined, color: textMain, size: 40),
-                    ),
-            ),
+    // 👆 Wrapped in GestureDetector for navigation
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => DishDetailScreen(dishId: dish.id),
           ),
-          const SizedBox(width: 16),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16.0),
+        padding: const EdgeInsets.all(12.0),
+        decoration: _doodleDecoration(),
+        child: Row(
+          children: [
+            // 1. Food Image
+            Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: outlineColor, width: 1.5), 
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: dish.imageUrl != null && dish.imageUrl!.isNotEmpty
+                    ? Image.network(dish.imageUrl!, fit: BoxFit.cover)
+                    : Container(
+                        color: const Color(0xFFF0F0F0),
+                        child: Icon(Icons.fastfood_outlined, color: textMain, size: 40),
+                      ),
+              ),
+            ),
+            const SizedBox(width: 16),
 
-          // 2. Dish & Restaurant Details
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  dish.name,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: textMain,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600, 
-                    height: 1.2,
+            // 2. Dish & Restaurant Details
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    dish.name,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: textMain,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600, 
+                      height: 1.2,
+                    ),
                   ),
-                ),
 
-                if (restaurantInfo.isNotEmpty) ...[
-                  const SizedBox(height: 6),
+                  if (restaurantInfo.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        Icon(Icons.storefront_outlined, color: textMuted, size: 16),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            restaurantInfo,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(color: textMuted, fontSize: 13, fontWeight: FontWeight.w500),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+
+                  const SizedBox(height: 12),
+
+                  // Price and Rating Badges
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Icon(Icons.storefront_outlined, color: textMuted, size: 16),
-                      const SizedBox(width: 4),
-                      Expanded(
+                      // Price Badge
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: secondaryAccent,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: outlineColor, width: 1.5),
+                        ),
                         child: Text(
-                          restaurantInfo,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(color: textMuted, fontSize: 13, fontWeight: FontWeight.w500),
+                          '\$${dish.price.toStringAsFixed(2)}',
+                          style: TextStyle(color: textMain, fontSize: 14, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                      
+                      // Rating Badge
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: outlineColor, width: 1.5),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.star_rounded, color: Color(0xFFFFB01D), size: 16),
+                            const SizedBox(width: 4),
+                            Text(
+                              dish.rating.toString(),
+                              style: TextStyle(color: textMain, fontSize: 13, fontWeight: FontWeight.w600),
+                            ),
+                          ],
                         ),
                       ),
                     ],
                   ),
                 ],
-
-                const SizedBox(height: 12),
-
-                // Price and Rating Badges
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    // Price Badge
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: secondaryAccent,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: outlineColor, width: 1.5),
-                      ),
-                      child: Text(
-                        '\$${dish.price.toStringAsFixed(2)}',
-                        style: TextStyle(color: textMain, fontSize: 14, fontWeight: FontWeight.w600),
-                      ),
-                    ),
-                    
-                    // Rating Badge
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: outlineColor, width: 1.5),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.star_rounded, color: Color(0xFFFFB01D), size: 16),
-                          const SizedBox(width: 4),
-                          Text(
-                            dish.rating.toString(),
-                            style: TextStyle(color: textMain, fontSize: 13, fontWeight: FontWeight.w600),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
