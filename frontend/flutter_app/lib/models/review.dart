@@ -29,7 +29,6 @@ class Review {
       dishId: json['dish_id'] ?? 0,
       userId: json['user_id'] ?? 0,
       rating: json['rating'] ?? 5, // Default to 5 matching your Python Field
-      tags: json['tags'],
       comment: json['comment'],
       reviewId: json['id'] ?? json['review_id'] ?? 0, // Handles validation_alias="id"
       createdAt: DateTime.parse(json['created_at']),

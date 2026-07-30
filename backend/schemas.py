@@ -66,7 +66,6 @@ class ReviewBase(BaseModel):
     dish_id: int = Field(ge=1, le=1000)
     user_id: int = Field(ge=1, le=1000)
     rating: int = Field(default=5, ge=1, le=5)
-    tags: str | None = Field(default=None, max_length=100)
     comment: str | None = Field(default=None, max_length=1000)
 
 class ReviewCreate(ReviewBase):
@@ -74,7 +73,6 @@ class ReviewCreate(ReviewBase):
 
 class ReviewUpdate(BaseModel):
     rating: int | None = Field(default=None, ge=1, le=5)
-    tags: str | None = Field(default=None, max_length=100)
     comment: str | None = Field(default=None, max_length=1000)
 
 class ReviewResponse(ReviewBase):

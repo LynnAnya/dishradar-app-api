@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/dish.dart';
-import '../services/search_api_service.dart';
+import '../services/search_api.dart';
 import 'dish_detail_screen.dart'; 
 import 'profile_screen.dart';
 

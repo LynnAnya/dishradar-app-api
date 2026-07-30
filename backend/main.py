@@ -149,19 +149,24 @@ async def get_user_reviews(user_id: int, db: Annotated[AsyncSession, Depends(get
     return reviews
 
 #user create review on speicific dish from specific restaurant
-@app.post("/reviews",  
+@app.post("/dishes/{dish_id}/reviews",  
           response_model=ReviewResponse,
           status_code=status.HTTP_201_CREATED)
-async def create_review(review: ReviewCreate, db: Annotated[AsyncSession, Depends(get_db)]):
-    result = await db.execute(select(models.Review)
-                              .where(models.Review.user_id == review.user_id, models.Review.dish_id == review.dish_id))
-    existing_review = result.scalars().first()
-    if  existing_review:
+async def create_review(
+    dish_id: int, 
+    review: ReviewCreate, 
+    db: Annotated[AsyncSession, Depends(get_db)]
+):
+
+    review.dish_id = dish_id
+    result = await db.execute(select(models.Dish).where(models.Dish.id == dish_id))
+    dish = result.scalars().first()
+    if not dish:
         raise HTTPException(
-        status_code=status.HTTP_409_CONFLICT,
-        detail="You have already reviewed this dish. You can edit your review instead."
-    )
-    
+            status_code=status.HTTP_404_NOT_FOUND, 
+            detail="Dish not found"
+        )
+        
     result = await db.execute(select(models.User).where(models.User.id == review.user_id))
     user = result.scalars().first()
     if not user:
@@ -169,20 +174,23 @@ async def create_review(review: ReviewCreate, db: Annotated[AsyncSession, Depend
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found",
         )
-    
-    result = await db.execute(select(models.Dish).where(models.Dish.id == review.dish_id))
-    dish = result.scalars().first()
-    if not dish:
+
+    result = await db.execute(
+        select(models.Review)
+        .where(models.Review.user_id == review.user_id, models.Review.dish_id == dish_id)
+    )
+    existing_review = result.scalars().first()
+    if existing_review:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, 
-            detail="Dish not found")
+            status_code=status.HTTP_409_CONFLICT,
+            detail="You have already reviewed this dish. You can edit your review instead."
+        )
 
     new_review = models.Review(
-        dish_id = review.dish_id,
-        user_id = review.user_id,
-        rating = review.rating,
-        tags =  review.tags,
-        comment = review.comment,
+        dish_id=review.dish_id,
+        user_id=review.user_id,
+        rating=review.rating,
+        comment=review.comment,
     )
     db.add(new_review)
     await db.commit()
@@ -193,6 +201,7 @@ async def create_review(review: ReviewCreate, db: Annotated[AsyncSession, Depend
         .where(models.Review.id == new_review.id)
     )
     new_result = result.scalars().first()
+    
     return new_result
     #await db.refresh(new_review)
     #return new_review

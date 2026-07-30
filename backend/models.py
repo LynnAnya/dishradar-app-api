@@ -34,7 +34,6 @@ class Review(Base):
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     rating: Mapped[int] = mapped_column(nullable=False, default=5)
     # Storing tags as a simple comma-separated string (e.g., "spicy,big_portion,good_value")
-    tags: Mapped[str | None] = mapped_column(String(100), nullable=True)
     comment: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
     #FK

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/dish.dart';
-import '../services/dish_detail_api.dart'; // Kept your exact import! 🔒
+import '../services/dish_detail_api.dart'; 
+import '../services/review_api.dart';
 
 class DishDetailScreen extends StatefulWidget {
   final int dishId;
@@ -23,6 +24,9 @@ class _DishDetailScreenState extends State<DishDetailScreen> {
 
   late Future<DishDetail> _dishDetailFuture;
 
+  // 🧪 Temporary Hardcoded User ID for testing before Authentication is added
+  final int currentUserId = 1;
+
   @override
   void initState() {
     super.initState();
@@ -43,6 +47,179 @@ class _DishDetailScreenState extends State<DishDetailScreen> {
           blurRadius: 0,
         ),
       ],
+    );
+  }
+
+  // 📝 Write Review Bottom Sheet Overlay
+  void _showWriteReviewSheet(BuildContext context, int dishId) {
+    int selectedRating = 5;
+    bool isSubmitting = false;
+    final TextEditingController commentController = TextEditingController();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true, // Allows the sheet to move up when the keyboard appears
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom, // Prevent keyboard from hiding the text field
+          ),
+          child: StatefulBuilder(
+            builder: (BuildContext context, StateSetter setModalState) {
+              return Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: bgColor,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                  border: Border.all(color: outlineColor, width: 2),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min, // Wraps content height
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Leave a Review ✍️',
+                      style: TextStyle(color: textMain, fontSize: 22, fontWeight: FontWeight.w700),
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Interactive Star Rating
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(5, (index) {
+                        return IconButton(
+                          icon: Icon(
+                            index < selectedRating ? Icons.star_rounded : Icons.star_border_rounded,
+                            color: const Color(0xFFFFB01D),
+                            size: 40,
+                          ),
+                          onPressed: isSubmitting ? null : () {
+                            setModalState(() {
+                              selectedRating = index + 1;
+                            });
+                          },
+                        );
+                      }),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Review Text Field
+                    TextField(
+                      controller: commentController,
+                      maxLines: 3,
+                      enabled: !isSubmitting,
+                      decoration: InputDecoration(
+                        hintText: 'What did you think of this dish?',
+                        filled: true,
+                        fillColor: cardColor,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12.5),
+                          borderSide: BorderSide(color: outlineColor),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12.5),
+                          borderSide: BorderSide(color: outlineColor),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12.5),
+                          borderSide: BorderSide(color: outlineColor, width: 2),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Submit Button
+                    GestureDetector(
+                      onTap: isSubmitting
+                          ? null
+                          : () async {
+                              final String rawComment = commentController.text.trim();
+                              final String? comment = rawComment.isEmpty ? null : rawComment;
+                              
+                              setModalState(() {
+                                isSubmitting = true;
+                              });
+
+                              try {
+                                // 🎯 Real API Call with named parameters and safe null handling
+                                await ReviewService().createReview(
+                                  dishId: dishId, 
+                                  userId: currentUserId, // Included userId as requested
+                                  rating: selectedRating, 
+                                  comment: comment,
+                                );
+                                
+                                if (context.mounted) {
+                                  Navigator.pop(context); // Close the popup
+                                  
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: const Text('Review submitted! 🎉'),
+                                      backgroundColor: outlineColor,
+                                      behavior: SnackBarBehavior.floating,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                    ),
+                                  );
+
+                                  // Refresh the page data to show the new review
+                                  setState(() {
+                                    _dishDetailFuture = DishService().fetchDishDetail(widget.dishId);
+                                  });
+                                }
+                              } catch (e) {
+                                if (context.mounted) {
+                                  setModalState(() {
+                                    isSubmitting = false;
+                                  });
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Failed to submit: $e'),
+                                      backgroundColor: Colors.redAccent,
+                                      behavior: SnackBarBehavior.floating,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                    ),
+                                  );
+                                }
+                              }
+                            },
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        decoration: _doodleDecoration(
+                          color: isSubmitting ? Colors.grey.shade300 : accentColor,
+                        ),
+                        alignment: Alignment.center,
+                        child: isSubmitting
+                            ? SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  color: textMain,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : Text(
+                                'Submit',
+                                style: TextStyle(
+                                  color: isSubmitting ? textMuted : textMain, 
+                                  fontSize: 16, 
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        );
+      },
     );
   }
 
@@ -199,16 +376,8 @@ class _DishDetailScreenState extends State<DishDetailScreen> {
                     ),
                     GestureDetector(
                       onTap: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: const Text('Write review feature coming soon! 🚀'),
-                            backgroundColor: outlineColor,
-                            behavior: SnackBarBehavior.floating,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                          ),
-                        );
+                        // Trigger the newly added bottom sheet here!
+                        _showWriteReviewSheet(context, widget.dishId);
                       },
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),

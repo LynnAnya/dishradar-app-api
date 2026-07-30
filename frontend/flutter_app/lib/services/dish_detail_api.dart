@@ -1,7 +1,8 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/dish.dart';
-import '../models/review.dart';
+
+
 
 class DishService {
   // 🌐 Change this to match your environment
@@ -25,27 +26,6 @@ class DishService {
       }
     } catch (e) {
       throw Exception('Network error while fetching dish: $e');
-    }
-  }
-
-  /// Fetches reviews for a specific dish when user requests more reviews.
-  /// Matches FastAPI Endpoint: GET /reviews/{dish_id}
-  Future<List<Review>> fetchReviews(int dishId) async {
-    final uri = Uri.parse('$baseUrl/reviews/$dishId');
-
-    try {
-      final response = await http.get(uri);
-
-      if (response.statusCode == 200) {
-        final List<dynamic> jsonList = jsonDecode(response.body);
-        return jsonList.map((json) => Review.fromJson(json)).toList();
-      } else if (response.statusCode == 404) {
-        throw Exception('Dish not found (404)');
-      } else {
-        throw Exception('Failed to load reviews. Status Code: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Network error while fetching reviews: $e');
     }
   }
 }
