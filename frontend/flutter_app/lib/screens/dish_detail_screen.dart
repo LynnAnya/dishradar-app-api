@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/dish.dart';
-import '../services/dish_detail_api.dart'; 
-import '../services/review_api.dart';
+import '../services/dishes_api.dart'; 
+import '../services/reviews_api.dart';
 
 class DishDetailScreen extends StatefulWidget {
   final int dishId;
@@ -171,12 +171,26 @@ class _DishDetailScreenState extends State<DishDetailScreen> {
                                 }
                               } catch (e) {
                                 if (context.mounted) {
-                                  setModalState(() {
-                                    isSubmitting = false;
-                                  });
+                                  final errorString = e.toString().toLowerCase();
+                                  String displayMessage = 'Oops! Failed to submit: $e';
+                                  if (errorString.contains('user not found') || errorString.contains('404')){
+                                    Navigator.pop(context);
+                                    displayMessage = 'User not found! Please log in or sign up.';
+                                  } else if (errorString.contains('already reviewed') || errorString.contains('409')) {
+                                    setModalState(() {
+                                      isSubmitting = false; // 🛑 Keep open
+                                    });
+                                    displayMessage = 'You have already reviewed this dish! 🍽️';
+                                  } else {
+                                    setModalState(() {
+                                      isSubmitting = false; // 🛑 Keep open for other random errors
+                                    });
+                                    displayMessage = 'Oops! Something went wrong. Please try again. ⚠️';
+                                  }
+
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
-                                      content: Text('Failed to submit: $e'),
+                                      content: Text(displayMessage),
                                       backgroundColor: Colors.redAccent,
                                       behavior: SnackBarBehavior.floating,
                                       shape: RoundedRectangleBorder(

@@ -1,8 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/dish.dart';
-import '../services/search_api.dart';
+import '../services/dishes_api.dart'; 
 import 'dish_detail_screen.dart'; 
+
 import 'profile_screen.dart';
 
 class MainScreen extends StatefulWidget {
@@ -26,6 +27,7 @@ class _MainScreenState extends State<MainScreen> {
 
   // Controllers & Production Helpers
   final TextEditingController _searchController = TextEditingController();
+  final ExpansibleController _expansionTileController = ExpansibleController();
   Timer? _debounceTimer;
 
   // Filter States
@@ -63,7 +65,7 @@ class _MainScreenState extends State<MainScreen> {
 
   void _fetchDishes() {
     setState(() {
-      _dishesFuture = SearchApiService.searchDishes(
+      _dishesFuture = DishService.searchDishes(
         q: _searchQuery.isNotEmpty ? _searchQuery : null,
         menuCategory: _selectedCategory,
         maxPrice: _maxPrice,
@@ -201,6 +203,7 @@ class _MainScreenState extends State<MainScreen> {
           Theme(
             data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
             child: ExpansionTile(
+              controller: _expansionTileController,
               iconColor: textMain,
               collapsedIconColor: textMain,
               title: Row(
@@ -245,7 +248,11 @@ class _MainScreenState extends State<MainScreen> {
                       if (_hasActiveFilters) const SizedBox(width: 16),
                       Expanded(
                         child: GestureDetector(
-                          onTap: _fetchDishes,
+                          onTap: () {
+                            _fetchDishes();
+                            _expansionTileController.collapse();  //close after Apply Filters
+                          },
+                          
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             decoration: _doodleDecoration(color: accentColor, borderRadius: 12),

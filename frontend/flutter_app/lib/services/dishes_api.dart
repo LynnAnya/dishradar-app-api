@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'dart:developer' as developer;
 import 'dart:io';
-import 'package:http/http.dart' as http;
 import '../models/dish.dart';
 
 class NetworkException implements Exception {
@@ -15,10 +15,10 @@ class NetworkException implements Exception {
   String toString() => message;
 }
 
-class SearchApiService {
-  // 💡 Tip: Move baseUrl to an environment configuration file in production!
+class DishService {
   static const String baseUrl = "http://127.0.0.1:8000";
 
+  // 1. get query
   static Future<List<Dish>> searchDishes({
     String? q,
     double? maxPrice,
@@ -34,7 +34,7 @@ class SearchApiService {
       queryParams['menu_category'] = menuCategory.trim();
     }
 
-    final url = Uri.parse('$baseUrl/search/dishes').replace(
+    final url = Uri.parse('$baseUrl/dishes/search').replace(
       queryParameters: queryParams.isNotEmpty ? queryParams : null,
     );
 
@@ -93,4 +93,25 @@ class SearchApiService {
       throw NetworkException('Unexpected Error: $e', e);
     }
   }
+
+  /// 2. get dish in detail 
+  Future<DishDetail> fetchDishDetail(int dishId) async {
+    final uri = Uri.parse('$baseUrl/dishes/$dishId');
+
+    try {
+      final response = await http.get(uri);
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
+        return DishDetail.fromJson(jsonResponse);
+      } else if (response.statusCode == 404) {
+        throw Exception('Dish not found (404)');
+      } else {
+        throw Exception('Failed to load dish details. Status Code: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Network error while fetching dish: $e');
+    }
+  }
+
 }

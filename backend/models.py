@@ -14,9 +14,16 @@ class User(Base):
     username: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
     email: Mapped[str] = mapped_column(String(120), unique=True, nullable=False)
     image_file: Mapped[str | None] = mapped_column(String(200), nullable=True, default=None,)
-
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), 
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC)
+    )
+    
     reviews: Mapped[list[Review]] = relationship(back_populates="reviewer", cascade="all, delete-orphan")
- 
+    favourite_dishes: Mapped[list["Dish"]] = relationship(secondary="favourites",back_populates="favourited_by_users")
+    
     @property
     def image_path(self) -> str:
         if self.image_file:
@@ -58,6 +65,7 @@ class Dish(Base):
 
     restaurant: Mapped[Restaurant] = relationship(back_populates="dishes")
     reviews: Mapped[list[Review]] = relationship(back_populates="dish", cascade="all, delete-orphan")
+    favourited_by_users: Mapped[list["User"]] = relationship(secondary="favourites",back_populates="favourite_dishes")
 
 class Restaurant(Base):
     __tablename__ = "restaurants"
@@ -74,4 +82,15 @@ class Restaurant(Base):
     # 🔄 RELATIONSHIP: 1 Restaurant -> Many Dishes
     dishes: Mapped[list[Dish]] = relationship(back_populates="restaurant", cascade="all, delete-orphan")
 
+class Favourite(Base):
+    __tablename__ = "favourites"
 
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    dish_id: Mapped[int] = mapped_column(ForeignKey("dishes.id", ondelete="CASCADE"), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+
+    dish: Mapped["Dish"] = relationship("Dish", overlaps="favourite_dishes,favourited_by_users")
+    user: Mapped["User"] = relationship("User", overlaps="favourite_dishes,favourited_by_users")
+
+    __table_args__ = ( UniqueConstraint("user_id", "dish_id", name="uq_user_dish_favourite"),)

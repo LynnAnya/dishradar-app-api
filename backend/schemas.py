@@ -57,7 +57,6 @@ class DishSearch(BaseModel):
     max_price: float | None = Field(default=None,  gt=0 )
     is_spicy: bool | None = Field(default=None )
 
-
 ######################
 # user creates reviews to certain dish from specific restaurant
 ######################
@@ -70,7 +69,6 @@ class ReviewBase(BaseModel):
 
 class ReviewCreate(ReviewBase):
    pass
-
 class ReviewUpdate(BaseModel):
     rating: int | None = Field(default=None, ge=1, le=5)
     comment: str | None = Field(default=None, max_length=1000)
@@ -81,7 +79,6 @@ class ReviewResponse(ReviewBase):
     review_id: int = Field(validation_alias="id")
     created_at: datetime 
     reviewer: UserBase
-
 
 ######################
 # user personal validation 
