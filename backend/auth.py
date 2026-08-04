@@ -1,19 +1,59 @@
-# auth.py
+from datetime import UTC, datetime, timedelta
 import jwt 
 from jwt.exceptions import InvalidTokenError 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
+from pwdlib import PasswordHash
+from config import settings
 from sqlalchemy import select 
 from sqlalchemy.orm import Session
 from database import get_db
 import models
 
+password_hash = PasswordHash.recommended()
+
 # Tells FastAPI to look for a "Bearer <token>" string inside the Authorization Header
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="users/token") # match endpoint api
 
-SECRET_KEY = "YOUR_SUPER_SECRET_KEY"  # Replace with a secure environment variable in production!
-ALGORITHM = "HS256"
+def hash_password(password: str) -> str:
+    return password_hash.hash(password)
 
+def verify_password(plain_password:str, hashed_password:str) -> bool:
+    return password_hash.verify(plain_password, hashed_password)
+
+def create_access_token(data:dict, expires_delta:timedelta) -> str:
+    """Create a JWT access token here"""
+    to_endcode = data.copy()
+    if expires_delta:
+        expire = datetime.now(UTC) + expires_delta
+    else: 
+        expire = datetime.now(UTC) + timedelta(minutes=settings.access_token_expire_minutes,)
+
+    to_endcode.update({"exp": expire})
+    encoded_jwt = jwt.encode(
+        to_endcode,
+        settings.secret_key.get_secret_value(),
+        algorithm=settings.algorithm,
+    )
+    return encoded_jwt
+
+def verify_access_token(token:str) -> str | None:
+    """Verify jwt access token and return the subject (user id) if valid"""
+    try: 
+        payload = jwt.decode(
+            token,
+            settings.secret_key.get_secret_value(),
+            algorithms=[settings.algorithm],
+            options={"require": ["exp", "sub"]}
+        )
+    except jwt.InvalidTokenError:
+        return None
+    else: 
+        return payload.get("sub")
+
+##############
+# not sure not yet
+##############
 def get_current_user(
     token: str = Depends(oauth2_scheme), 
     db: Session = Depends(get_db)

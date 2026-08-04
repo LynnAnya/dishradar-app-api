@@ -20,6 +20,7 @@ class User(Base):
         default=lambda: datetime.now(UTC),
         onupdate=lambda: datetime.now(UTC)
     )
+    password_hash: Mapped[str] = mapped_column(String(200), nullable=False)
     
     reviews: Mapped[list[Review]] = relationship(back_populates="reviewer", cascade="all, delete-orphan")
     favourite_dishes: Mapped[list["Dish"]] = relationship(secondary="favourites",back_populates="favourited_by_users")
