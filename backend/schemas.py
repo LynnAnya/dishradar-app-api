@@ -62,12 +62,12 @@ class DishSearch(BaseModel):
 ######################
 class ReviewBase(BaseModel):
     #dish and restaurant (user already clicked on that -- need or not )
-    dish_id: int = Field(ge=1, le=1000)
-    user_id: int = Field(ge=1, le=1000)
+    
     rating: int = Field(default=5, ge=1, le=5)
     comment: str | None = Field(default=None, max_length=1000)
 
 class ReviewCreate(ReviewBase):
+   
    pass
 class ReviewUpdate(BaseModel):
     rating: int | None = Field(default=None, ge=1, le=5)
@@ -93,7 +93,6 @@ class UserCreate(UserBase):
 class UserPublic(BaseModel):   #  what public can see, change from UserResponse -- update in api too!
     model_config = ConfigDict(from_attributes=True)
 
-    id: int
     username: str
     image_file: str | None
     image_path: str
@@ -110,6 +109,3 @@ class Token(BaseModel):
     access_token: str
     token_type: str
 
-#class UserRegister
-#class UserLogin
-#class UserTokenResponse

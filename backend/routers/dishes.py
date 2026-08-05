@@ -3,11 +3,10 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload, joinedload
+from auth import CurrentUser
 import models
 from database import get_db
-#from auth import get_current_user
 from schemas import (
-    DishCreate,
     DishResponse,
     DishDetailResponse,
     ReviewCreate,
@@ -18,7 +17,7 @@ router = APIRouter()
 ###############
 # Dish activities 
 ###############
-# all dishes (not details, before user click). -not used yet -search can show all too
+# all dishes (not details, before user click). [[-not used yet -search can show all too]] ----DONE
 @router.get("", response_model=list[DishResponse], name="dishes")
 async def get_home(db: Annotated[AsyncSession, Depends(get_db)]
 ):
@@ -26,7 +25,7 @@ async def get_home(db: Annotated[AsyncSession, Depends(get_db)]
     dishes = result.scalars().all()
     return dishes
 
-#user search/filter dish -> get list 
+#user search/filter dish -> get list ---DONE
 @router.get("/search", response_model=list[DishResponse])
 async def get_search_dishes(
     db: Annotated[AsyncSession, Depends(get_db)],
@@ -54,11 +53,11 @@ async def get_search_dishes(
     dishes = result.scalars().unique().all()
     return dishes
 
-# get specfic dish detail from specific restaurant
+# get specfic dish detail from specific restaurant. ---- DONE
 @router.get("/{dish_id}", response_model=DishDetailResponse)
 async def get_dish(dish_id: int, db: Annotated[AsyncSession, Depends(get_db) ]):
     result = await db.execute(select(models.Dish).options(
-        selectinload(models.Dish.reviews), 
+        selectinload(models.Dish.reviews).selectinload(models.Review.reviewer), 
         selectinload(models.Dish.restaurant)
         )
         .where(models.Dish.id == dish_id))
@@ -67,70 +66,52 @@ async def get_dish(dish_id: int, db: Annotated[AsyncSession, Depends(get_db) ]):
         return dish
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Dish content not found")
 
-#user create review on speicific dish from specific restaurant
+#user create review on speicific dish from specific restaurant. ---DONE
 @router.post("/{dish_id}/reviews", response_model=ReviewResponse, status_code=status.HTTP_201_CREATED)
 async def create_review(
     dish_id: int, 
+    current_user: CurrentUser,
     review: ReviewCreate, 
     db: Annotated[AsyncSession, Depends(get_db)]
 ):
-    review.dish_id = dish_id
-    result = await db.execute(select(models.Dish).where(models.Dish.id == dish_id))
-    dish = result.scalars().first()
+    # check dish existed
+    dish = await db.get(models.Dish, dish_id)
     if not dish:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, 
-            detail="Dish not found"
-        )
-        
-    result = await db.execute(select(models.User).where(models.User.id == review.user_id))
-    user = result.scalars().first()
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found",
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Dish not found" )
 
+    # check if review already exist
     result = await db.execute(
         select(models.Review)
-        .where(models.Review.user_id == review.user_id, models.Review.dish_id == dish_id)
+        .where(models.Review.user_id == current_user.id, models.Review.dish_id == dish_id)
     )
-    existing_review = result.scalars().first()
+    existing_review = result.scalar_one_or_none()
     if existing_review:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="You have already reviewed this dish. You can edit your review instead."
         )
 
+    # create review 
     new_review = models.Review(
-        dish_id=review.dish_id,
-        user_id=review.user_id,
+        dish_id=dish_id,
+        user_id=current_user.id,
         rating=review.rating,
         comment=review.comment,
     )
     db.add(new_review)
     await db.commit()
+    await db.refresh(new_review)
 
-    result = await db.execute(
-        select(models.Review)
-        .options(selectinload(models.Review.reviewer))
-        .where(models.Review.id == new_review.id)
-    )
-    new_result = result.scalars().first()
-    
-    return new_result
-    #await db.refresh(new_review)
-    #return new_review
+    return new_review
 
-#user creates favourite on specific dish 
+#user creates favourite on specific dish  ------DONE
 # Tapping heart icon from the main dish feed / dish details screen
 @router.post("/{dish_id}/favourite", status_code=status.HTTP_200_OK)
 async def toggle_dish_favourite(
     dish_id: int,
+    current_user: CurrentUser,
     db: Annotated[AsyncSession, Depends(get_db)],
 ):
-    target_user_id = 1  # Mock user_id for now
-
     # 1. if dish exists
     dish = select(models.Dish).where(models.Dish.id == dish_id)
     dish_result = await db.execute(dish)
@@ -139,7 +120,7 @@ async def toggle_dish_favourite(
 
     # 2. Check if already favorited
     fav = select(models.Favourite).where(
-        models.Favourite.user_id == target_user_id,
+        models.Favourite.user_id == current_user.id,
         models.Favourite.dish_id == dish_id
     )
     result = await db.execute(fav)
@@ -151,7 +132,7 @@ async def toggle_dish_favourite(
         await db.commit()
         return {"is_favourite": False, "message": "Removed from favorites 🤍"}
 
-    new_favourite = models.Favourite(user_id=target_user_id, dish_id=dish_id)
+    new_favourite = models.Favourite(user_id=current_user.id, dish_id=dish_id)
     db.add(new_favourite)
     await db.commit()
     return {"is_favourite": True, "message": "Added to favorites ❤️"}
