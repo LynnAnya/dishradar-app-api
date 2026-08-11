@@ -3,17 +3,16 @@ import 'package:flutter/material.dart';
 import '../models/dish.dart';
 import '../services/dishes_api.dart'; 
 import 'dish_detail_screen.dart'; 
-
 import 'profile_screen.dart';
 
-class MainScreen extends StatefulWidget {
-  const MainScreen({super.key});
-
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+  
   @override
-  State<MainScreen> createState() => _MainScreenState();
+  State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _MainScreenState extends State<MainScreen> {
+class _HomeScreenState extends State<HomeScreen> {
   // 🎨 Softer, Lighter Playful Theme Colors
   final Color bgColor = const Color(0xFFFEFDF7); 
   final Color cardColor = Colors.white;
@@ -55,17 +54,15 @@ class _MainScreenState extends State<MainScreen> {
     super.initState();
     _fetchDishes();
   }
-
   @override
   void dispose() {
     _searchController.dispose();
     _debounceTimer?.cancel();
     super.dispose();
   }
-
   void _fetchDishes() {
     setState(() {
-      _dishesFuture = DishService.searchDishes(
+      _dishesFuture = DishService().searchDishes(
         q: _searchQuery.isNotEmpty ? _searchQuery : null,
         menuCategory: _selectedCategory,
         maxPrice: _maxPrice,
@@ -73,7 +70,6 @@ class _MainScreenState extends State<MainScreen> {
       );
     });
   }
-
   void _onSearchChanged(String value) {
     if (_debounceTimer?.isActive ?? false) _debounceTimer!.cancel();
     _debounceTimer = Timer(const Duration(milliseconds: 350), () {
@@ -85,7 +81,6 @@ class _MainScreenState extends State<MainScreen> {
       }
     });
   }
-
   void _resetAllFilters() {
     setState(() {
       _searchController.clear();
@@ -350,7 +345,6 @@ class _MainScreenState extends State<MainScreen> {
       ),
     );
   }
-
   Widget _buildSortFilter() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
@@ -376,7 +370,6 @@ class _MainScreenState extends State<MainScreen> {
       ),
     );
   }
-
   Widget _buildPriceFilter() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
@@ -417,7 +410,6 @@ class _MainScreenState extends State<MainScreen> {
       ),
     );
   }
-
   Widget _buildRatingFilter() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
@@ -443,7 +435,6 @@ class _MainScreenState extends State<MainScreen> {
       ),
     );
   }
-
   Widget _buildCategoryFilter() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
@@ -478,7 +469,6 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   // --- 1-Column Horizontal Card Layout ---
-
   Widget _buildDishCard(Dish dish) {
     final city = _extractCity(dish.restaurantAddress);
     final restaurantInfo = [

@@ -202,7 +202,6 @@ async def upload_user_picture(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"File too large. Maximum size is {settings.max_upload_size_bytes // (1024*1024)}MB",
         )
-
     # actual img processing start validating
     try:
         new_filename = await run_in_threadpool(process_profile_image, content)
@@ -236,12 +235,10 @@ async def delete_user_picture(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="No profile picture to delete",
         )
-
     current_user.image_file = None
     await db.commit()
     await db.refresh(current_user)
 
     delete_profile_image(old_filename)
-
     return current_user
     
