@@ -212,7 +212,6 @@ async def upload_user_picture(
         ) from err
 
     old_filename = current_user.image_file
-
     current_user.image_file = new_filename
     await db.commit()
     await db.refresh(current_user)
@@ -221,7 +220,6 @@ async def upload_user_picture(
         delete_profile_image(old_filename)
 
     return current_user
-
 
 @router.delete("/me/picture", response_model=UserPrivate)
 async def delete_user_picture(

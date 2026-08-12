@@ -219,6 +219,44 @@ class ApiClient {
     }
   }
 
+  /// Handles Multipart File Uploads (for profile pictures, documents, etc.)
+  Future<T> patchMultipart<T>({
+    required String path,
+    required File file,
+    required String fileFieldName, // e.g. 'file' matching FastAPI's file parameter
+    required String endpointName,
+    required T Function(dynamic data) onSuccess,
+  }) async {
+    final uri = Uri.parse('$baseUrl$path');
+    final String? token = await TokenStorage.getToken();
+
+    try {
+      final request = http.MultipartRequest('PATCH', uri);
+
+      // Auto-attach Authorization Token
+      if (token != null) {
+        request.headers['Authorization'] = 'Bearer $token';
+      }
+
+      // Attach file stream
+      request.files.add(
+        await http.MultipartFile.fromPath(fileFieldName, file.path),
+      );
+
+      final streamedResponse = await request.send().timeout(const Duration(seconds: 30));
+      final response = await http.Response.fromStream(streamedResponse);
+
+      return _parseResponse<T>(
+        response: response,
+        endpointName: endpointName,
+        onSuccess: onSuccess,
+      );
+    } catch (e) {
+      if (e is NetworkException) rethrow;
+      throw NetworkException('Failed to upload image: $e', e);
+    }
+  }
+
   /// Standardized HTTP response parsing & error extraction
   T _parseResponse<T>({
     required http.Response response,

@@ -1,9 +1,11 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart'; 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import 'auth_screen.dart';
-import '../providers/user_provider.dart'; 
+import '../providers/user_provider.dart';
+import '../models/user.dart';
 
-// 3. Change to ConsumerStatefulWidget
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
@@ -11,9 +13,8 @@ class ProfileScreen extends ConsumerStatefulWidget {
   ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-// 4. ✨ Change to ConsumerState
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
-  // 🎨 Exact Same Theme Colors
+  // 🎨 Theme Colors
   final Color bgColor = const Color(0xFFFEFDF7);
   final Color cardColor = Colors.white;
   final Color accentColor = const Color.fromARGB(255, 187, 182, 242);
@@ -21,8 +22,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   final Color textMuted = const Color(0xFF757575);
   final Color outlineColor = const Color.fromARGB(255, 88, 88, 88);
 
-  // This is purely local UI state, so it stays here! No need to put this in Riverpod.
   bool _notificationsEnabled = true;
+  
+  // 📸 Image Picker Instance
+  final ImagePicker _picker = ImagePicker();
 
   BoxDecoration _doodleDecoration({Color? color, double borderRadius = 12.5}) {
     return BoxDecoration(
@@ -39,11 +42,45 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
-  // The final delete action
+  //
+  Widget _buildProfileAvatar(User user, {required double radius, required double iconSize}) {
+    // 1. Get image string from model
+    final String? imageName = user.imageFile ?? user.imagePath;
+
+    String? fullImageUrl;
+    if (imageName != null && imageName.isNotEmpty) {
+      // Clean any accidental leading slash
+      final cleanPath = imageName.startsWith('/') ? imageName.substring(1) : imageName;
+
+      if (cleanPath.startsWith('http')) {
+        fullImageUrl = cleanPath;
+      } else if (cleanPath.startsWith('media/')) {
+        // Backend returned 'media/profile_pics/sample.jpg'
+        fullImageUrl = 'http://127.0.0.1:8000/$cleanPath';
+      } else if (cleanPath.startsWith('profile_pics/')) {
+        // Backend returned 'profile_pics/sample.jpg'
+        fullImageUrl = 'http://127.0.0.1:8000/media/$cleanPath';
+      } else {
+        // Backend returned raw filename 'sample.jpg'
+        fullImageUrl = 'http://127.0.0.1:8000/media/profile_pics/$cleanPath';
+      }
+    }
+
+    return CircleAvatar(
+      radius: radius,
+      backgroundColor: accentColor,
+      foregroundImage: fullImageUrl != null ? NetworkImage(fullImageUrl) : null,
+      child: Icon(Icons.person_rounded, color: textMain, size: iconSize),
+    );
+  }
+ 
+  // 🗑️ Delete Account Logic
   Future<void> _executeDeleteAccount() async {
-    Navigator.of(context).pop(); // Pop the confirmation dialog
+    final navigator = Navigator.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+
+    navigator.pop(); // Pop confirmation dialog
     
-    // Show a loading indicator
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -51,28 +88,21 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
 
     try {
-      // 🚀 Tell Riverpod to handle the deletion logic (API + Token + RAM)
       await ref.read(userProvider.notifier).deleteAccount();
       
-      if (mounted) {
-        Navigator.of(context).pop(); // Remove loading indicator
-        Navigator.pushAndRemoveUntil(
-          context, 
-          MaterialPageRoute(builder: (context) => const AuthScreen()), 
-          (route) => false,
-        );
-      }
+      navigator.pop(); // Remove spinner
+      navigator.pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => const AuthScreen()), 
+        (route) => false,
+      );
     } catch (e) {
-      if (mounted) {
-        Navigator.of(context).pop(); // Remove loading indicator
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to delete account: $e')),
-        );
-      }
+      navigator.pop(); // Remove spinner
+      messenger.showSnackBar(
+        SnackBar(content: Text('Failed to delete account: $e')),
+      );
     }
   }
 
-  //  Step 2 of Delete: Are you sure?
   void _showDeleteConfirmation() {
     showDialog(
       context: context,
@@ -94,7 +124,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 backgroundColor: Colors.redAccent,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
-              onPressed: _executeDeleteAccount, // Calls the updated function above
+              onPressed: _executeDeleteAccount,
               child: const Text('Delete', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
             ),
           ],
@@ -103,45 +133,170 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
-  // 📄 Step 1 of Details: Show User Details Modal
-  void _showUserDetails(String joinedDate) {
+  // 📸 Handle Pick & Upload Image
+  Future<void> _pickAndUploadImage() async {
+    final messenger = ScaffoldMessenger.of(context); 
+
+    try {
+      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+      if (image != null) {
+        await ref.read(userProvider.notifier).uploadProfilePicture(File(image.path));
+        
+        messenger.showSnackBar(
+          const SnackBar(content: Text('Profile picture updated! 📸')),
+        );
+      }
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text('Failed to upload image: $e')),
+      );
+    }
+  }
+
+  // 🗑️ Handle Delete Image
+  Future<void> _removeImage() async {
+    final messenger = ScaffoldMessenger.of(context);
+
+    try {
+      await ref.read(userProvider.notifier).deleteProfilePicture();
+      
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Profile picture removed! 🗑️')),
+      );
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text('Failed to remove image: $e')),
+      );
+    }
+  }
+
+  // 📄 Show Tall User Details Modal
+  void _showUserDetailsModal() {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) {
-        return Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: bgColor,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-            border: Border.all(color: outlineColor, width: 1.0),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Account Details', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: textMain)),
-              const SizedBox(height: 20),
-              
-              _buildDetailRow(Icons.calendar_today, 'First joined', joinedDate),
-              const SizedBox(height: 12),
-              _buildDetailRow(Icons.login, 'Logged in via', 'Email and Password'),
-              
-              const SizedBox(height: 32),
-              const Divider(),
-              
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.delete_forever, color: Colors.redAccent),
-                title: const Text('Delete my account and data', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
-                onTap: () {
-                  Navigator.pop(context); 
-                  _showDeleteConfirmation(); 
-                },
+        return Consumer(
+          builder: (context, ref, child) {
+            final userState = ref.watch(userProvider);
+            final user = userState.value;
+            
+            if (user == null) return const SizedBox();
+
+            final String? imageName = user.imageFile ?? user.imagePath;
+
+            return FractionallySizedBox(
+              heightFactor: 0.85,
+              child: Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: bgColor,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                  border: Border.all(color: outlineColor, width: 2.0),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Drag Handle
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 5,
+                        margin: const EdgeInsets.only(bottom: 24),
+                        decoration: BoxDecoration(
+                          color: outlineColor.withValues(alpha: 0.3),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ),
+                    
+                    // 🎯 Modern Social Avatar with Camera Badge Overlay
+                    Center(
+                      child: Column(
+                        children: [
+                          GestureDetector(
+                            onTap: _pickAndUploadImage,
+                            child: Stack(
+                              children: [
+                                // 1. Avatar Container
+                                Container(
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: outlineColor, width: 2.0),
+                                  ),
+                                  child: _buildProfileAvatar(user, radius: 48, iconSize: 50),
+                                ),
+
+                                // 2. Floating Camera Badge 📸
+                                Positioned(
+                                  bottom: 0,
+                                  right: 0,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: cardColor,
+                                      shape: BoxShape.circle,
+                                      border: Border.all(color: outlineColor, width: 1.5),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: outlineColor,
+                                          offset: const Offset(1, 1),
+                                          blurRadius: 0,
+                                        ),
+                                      ],
+                                    ),
+                                    child: Icon(Icons.camera_alt_rounded, size: 18, color: textMain),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          
+                          // Smart Remove Button (Only shown when image exists)
+                          if (imageName != null && imageName.isNotEmpty) ...[
+                            const SizedBox(height: 12),
+                            TextButton.icon(
+                              onPressed: _removeImage,
+                              icon: const Icon(Icons.delete, size: 16, color: Colors.redAccent),
+                              label: const Text(
+                                'Remove Photo',
+                                style: TextStyle(color: Colors.redAccent, fontSize: 13, fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    
+                    const SizedBox(height: 32),
+                    Text('Account Details', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: textMain)),
+                    const SizedBox(height: 20),
+                    
+                    _buildDetailRow(Icons.person_outline, 'Username', user.username),
+                    const SizedBox(height: 12),
+                    _buildDetailRow(Icons.email_outlined, 'Email', user.email),
+                    const SizedBox(height: 12),
+                    _buildDetailRow(Icons.calendar_today, 'First joined', 'Recently'),
+                    
+                    const Spacer(),
+                    const Divider(),
+                    
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.delete_forever, color: Colors.redAccent),
+                      title: const Text('Delete my account and data', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+                      onTap: () {
+                        Navigator.pop(context); 
+                        _showDeleteConfirmation(); 
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                ),
               ),
-              const SizedBox(height: 16),
-            ],
-          ),
+            );
+          },
         );
       },
     );
@@ -160,7 +315,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    //  5. Listen to the Riverpod state!
     final userState = ref.watch(userProvider);
 
     return Scaffold(
@@ -174,44 +328,38 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           style: TextStyle(color: textMain, fontWeight: FontWeight.w600, fontSize: 22),
         ),
       ),
-      // 6. Use .when() to automatically draw the correct UI based on the API status
       body: userState.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(child: Text('Error: $err', style: const TextStyle(color: Colors.redAccent))),
         data: (user) {
-          // Fallback if data somehow got wiped but they are still on the screen
           if (user == null) return const Center(child: Text('No user found.'));
 
           return ListView(
             padding: const EdgeInsets.all(16.0),
             children: [
-              // 1. Dynamic Interactive Profile Header
+              // 1. Dynamic Profile Header Card
               GestureDetector(
-                onTap: () => _showUserDetails('Recently'), // Pass any formatted date if needed
+                onTap: _showUserDetailsModal,
                 child: Container(
                   padding: const EdgeInsets.all(16),
                   decoration: _doodleDecoration(),
                   child: Row(
                     children: [
-                      CircleAvatar(
-                        radius: 28,
-                        backgroundColor: accentColor,
-                        child: Icon(Icons.person, color: textMain, size: 32),
-                      ),
+                      _buildProfileAvatar(user, radius: 28, iconSize: 32),
                       const SizedBox(width: 16),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              '${user.username} 🍕', // Directly reads from Riverpod's memory
+                              '${user.username} 🍕',
                               style: TextStyle(color: textMain, fontSize: 18, fontWeight: FontWeight.bold),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              user.email, // Directly reads from Riverpod's memory
+                              user.email,
                               style: TextStyle(color: textMuted, fontSize: 14),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -226,7 +374,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ),
               const SizedBox(height: 24),
 
-              // 2. Settings List
+              // 2. Settings Options List
               Container(
                 decoration: _doodleDecoration(),
                 child: ClipRRect(
@@ -250,11 +398,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           secondary: Icon(Icons.notifications_none, color: textMain),
                           title: Text('Push Notifications', style: TextStyle(color: textMain, fontWeight: FontWeight.w500)),
                           activeThumbColor: accentColor,
-                          activeTrackColor: accentColor.withValues(alpha: 0.5),
+                          activeTrackColor: accentColor.withValues(alpha: 0.5), 
                           value: _notificationsEnabled,
                           onChanged: (val) {
                             setState(() {
-                              _notificationsEnabled = val; // We still use setState for simple local toggles!
+                              _notificationsEnabled = val;
                             });
                           },
                         ),
@@ -270,15 +418,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           leading: const Icon(Icons.logout, color: Colors.redAccent),
                           title: const Text('Log Out', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w600)),
                           onTap: () async {
-                            // 🚀 Tell Riverpod to clear the session!
+                            final navigator = Navigator.of(context);
+                            
                             await ref.read(userProvider.notifier).clearSession();
                             
-                            if (mounted) {
-                              Navigator.pushAndRemoveUntil(
-                                context, 
-                                MaterialPageRoute(builder: (context) => const AuthScreen()), 
-                                (route) => false);
-                            }
+                            navigator.pushAndRemoveUntil(
+                              MaterialPageRoute(builder: (context) => const AuthScreen()), 
+                              (route) => false,
+                            );
                           },
                         ),
                       ],

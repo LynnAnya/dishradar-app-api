@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/user.dart';
 import '../services/users_api.dart';
@@ -37,6 +38,35 @@ class UserNotifier extends AsyncNotifier<User?> {
     await TokenStorage.clearToken();     // Clear Phone Storage
     state = const AsyncValue.data(null); // Clear RAM
   }
+
+  /// Uploads a new profile picture and updates global Riverpod state
+  Future<void> uploadProfilePicture(File imageFile) async {
+    final previousState = state; // Save current state in case of error
+    state = const AsyncValue.loading(); // Show loading state
+    
+    try {
+      final updatedUser = await UsersApi().uploadProfilePicture(imageFile);
+      state = AsyncValue.data(updatedUser); 
+    } catch (e, stackTrace) {
+      state = previousState; // Revert to old state if upload fails
+      return Future.error(e, stackTrace); // Rethrow so UI shows SnackBar
+    }
+  }
+
+  /// Removes the profile picture and updates global Riverpod state
+  Future<void> deleteProfilePicture() async {
+    final previousState = state;
+    state = const AsyncValue.loading();
+    
+    try {
+      final updatedUser = await UsersApi().deleteProfilePicture();
+      state = AsyncValue.data(updatedUser); 
+    } catch (e, stackTrace) {
+      state = previousState;
+      return Future.error(e, stackTrace);
+    }
+  }
+
 }
 
 // 2. The Provider (The label the UI uses to connect to the Brain)
