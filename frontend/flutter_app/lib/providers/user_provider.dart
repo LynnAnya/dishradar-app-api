@@ -6,7 +6,7 @@ import '../core/storage/token_storage.dart';
 // 1. The Notifier (The Brain/Manager)
 class UserNotifier extends AsyncNotifier<User?> {
   
-  // 🚀 Runs automatically when the app opens or UI asks for it
+  // Runs automatically when the app opens or UI asks for it
   @override
   Future<User?> build() async {
     try {
@@ -18,7 +18,7 @@ class UserNotifier extends AsyncNotifier<User?> {
     }
   }
 
-  // 🚨 Completely wipes the user from Backend + Phone + RAM
+  // Completely wipes the user from Backend + Phone + RAM
   Future<void> deleteAccount() async {
     state = const AsyncValue.loading(); // Show spinner globally
     
@@ -32,7 +32,7 @@ class UserNotifier extends AsyncNotifier<User?> {
     }
   }
 
-  // 🚪 Standard Log Out (Keeps account, just clears session)
+  //  Standard Log Out (Keeps account, just clears session)
   Future<void> clearSession() async {
     await TokenStorage.clearToken();     // Clear Phone Storage
     state = const AsyncValue.data(null); // Clear RAM

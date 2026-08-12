@@ -1,31 +1,32 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart'; // 🎯 1. Imported Riverpod
 import '../models/dish.dart';
+import '../models/review.dart'; // 🎯 Imported Review model
+import '../providers/user_provider.dart'; // 🎯 Imported UserProvider
 import '../services/dishes_api.dart'; 
 import '../services/reviews_api.dart';
 
-class DishDetailScreen extends StatefulWidget {
+// 🎯 2. Changed to ConsumerStatefulWidget to access Riverpod state
+class DishDetailScreen extends ConsumerStatefulWidget {
   final int dishId;
 
   const DishDetailScreen({super.key, required this.dishId});
 
   @override
-  State<DishDetailScreen> createState() => _DishDetailScreenState();
+  ConsumerState<DishDetailScreen> createState() => _DishDetailScreenState();
 }
 
-class _DishDetailScreenState extends State<DishDetailScreen> {
-  // 🎨 Exact Same Theme Colors from MainScreen
+class _DishDetailScreenState extends ConsumerState<DishDetailScreen> {
+  // 🎨 Exact Same Theme Colors
   final Color bgColor = const Color(0xFFFEFDF7);
   final Color cardColor = Colors.white;
   final Color accentColor = const Color.fromARGB(255, 187, 182, 242);
   final Color secondaryAccent = const Color(0xFFFF8FA3);
   final Color textMain = const Color.fromARGB(255, 48, 48, 48);
   final Color textMuted = const Color(0xFF757575);
-  final Color outlineColor = const Color.fromARGB(255, 88, 88, 88);
+  final Color outlineColor = const Color.fromARGB(255, 159, 156, 156);
 
   late Future<DishDetail> _dishDetailFuture;
-
-  // 🧪 Temporary Hardcoded User ID for testing before Authentication is added
-  final int currentUserId = 1;
 
   @override
   void initState() {
@@ -39,7 +40,7 @@ class _DishDetailScreenState extends State<DishDetailScreen> {
     return BoxDecoration(
       color: color ?? cardColor,
       borderRadius: BorderRadius.circular(borderRadius),
-      border: Border.all(color: outlineColor, width: 1.0),
+      border: Border.all(color: outlineColor, width: 0.5),
       boxShadow: [
         BoxShadow(
           color: outlineColor,
@@ -50,11 +51,17 @@ class _DishDetailScreenState extends State<DishDetailScreen> {
     );
   }
 
-  // 📝 Write Review Bottom Sheet Overlay
-  void _showWriteReviewSheet(BuildContext context, int dishId) {
-    int selectedRating = 5;
+  //  Write/Edit Review Bottom Sheet Overlay
+  //  3. Added optional existingReview parameter
+  void _showWriteReviewSheet(BuildContext context, int dishId, {Review? existingReview}) {
+    final bool isEditing = existingReview != null;
+    
+    //  4. Pre-fill with existing data if editing
+    int selectedRating = existingReview?.rating ?? 5;
     bool isSubmitting = false;
-    final TextEditingController commentController = TextEditingController();
+    final TextEditingController commentController = TextEditingController(
+      text: existingReview?.comment ?? '',
+    );
 
     showModalBottomSheet(
       context: context,
@@ -79,7 +86,7 @@ class _DishDetailScreenState extends State<DishDetailScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Leave a Review ✍️',
+                      isEditing ? 'Edit your review' : 'Leave a review',
                       style: TextStyle(color: textMain, fontSize: 22, fontWeight: FontWeight.w700),
                     ),
                     const SizedBox(height: 16),
@@ -142,20 +149,27 @@ class _DishDetailScreenState extends State<DishDetailScreen> {
                               });
 
                               try {
-                                // 🎯 Real API Call with named parameters and safe null handling
-                                await ReviewService().createReview(
-                                  dishId: dishId, 
-                                  userId: currentUserId, // Included userId as requested
-                                  rating: selectedRating, 
-                                  comment: comment,
-                                );
+                                //  5. Update vs Create
+                                if (isEditing) {
+                                  await ReviewService().updateReview(
+                                    reviewId: existingReview.reviewId, 
+                                    rating: selectedRating, 
+                                    comment: comment,
+                                  );
+                                } else {
+                                  await ReviewService().createReview(
+                                    dishId: dishId, 
+                                    rating: selectedRating, 
+                                    comment: comment,
+                                  );
+                                }
                                 
                                 if (context.mounted) {
                                   Navigator.pop(context); // Close the popup
                                   
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
-                                      content: const Text('Review submitted! 🎉'),
+                                      content: Text(isEditing ? 'Review updated!' : 'Review submitted! 🎉'),
                                       backgroundColor: outlineColor,
                                       behavior: SnackBarBehavior.floating,
                                       shape: RoundedRectangleBorder(
@@ -173,18 +187,14 @@ class _DishDetailScreenState extends State<DishDetailScreen> {
                                 if (context.mounted) {
                                   final errorString = e.toString().toLowerCase();
                                   String displayMessage = 'Oops! Failed to submit: $e';
-                                  if (errorString.contains('user not found') || errorString.contains('404')){
+                                  if (errorString.contains('user not found') || errorString.contains('401')){
                                     Navigator.pop(context);
-                                    displayMessage = 'User not found! Please log in or sign up.';
+                                    displayMessage = 'Please log in to review.';
                                   } else if (errorString.contains('already reviewed') || errorString.contains('409')) {
-                                    setModalState(() {
-                                      isSubmitting = false; // 🛑 Keep open
-                                    });
+                                    setModalState(() { isSubmitting = false; });
                                     displayMessage = 'You have already reviewed this dish! 🍽️';
                                   } else {
-                                    setModalState(() {
-                                      isSubmitting = false; // 🛑 Keep open for other random errors
-                                    });
+                                    setModalState(() { isSubmitting = false; });
                                     displayMessage = 'Oops! Something went wrong. Please try again. ⚠️';
                                   }
 
@@ -218,7 +228,7 @@ class _DishDetailScreenState extends State<DishDetailScreen> {
                                 ),
                               )
                             : Text(
-                                'Submit',
+                                isEditing ? 'Update Review' : 'Submit Review',
                                 style: TextStyle(
                                   color: isSubmitting ? textMuted : textMain, 
                                   fontSize: 16, 
@@ -239,16 +249,16 @@ class _DishDetailScreenState extends State<DishDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // 🎯 6. Read the current logged-in user from Riverpod state
+    final userState = ref.watch(userProvider);
+    final currentUser = userState.value;
+
     return Scaffold(
       backgroundColor: bgColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: IconThemeData(color: textMain),
-        title: Text(
-          'Dish Details ✨',
-          style: TextStyle(color: textMain, fontWeight: FontWeight.w600, fontSize: 22),
-        ),
       ),
       body: FutureBuilder<DishDetail>(
         future: _dishDetailFuture,
@@ -262,6 +272,18 @@ class _DishDetailScreenState extends State<DishDetailScreen> {
           }
 
           final dish = snapshot.data!;
+
+          // 🎯 7. Check if this specific user has already reviewed the dish
+          Review? existingReview;
+          if (currentUser != null) {
+            for (final r in dish.reviews) {
+              if (r.reviewer.username == currentUser.username) {
+                existingReview = r;
+                break;
+              }
+            }
+          }
+          final bool hasReviewed = existingReview != null;
 
           return SingleChildScrollView(
             physics: const BouncingScrollPhysics(),
@@ -380,24 +402,32 @@ class _DishDetailScreenState extends State<DishDetailScreen> {
                 Divider(color: Colors.grey.shade300, thickness: 1.0, height: 1.0),
                 const SizedBox(height: 24),
 
-                // 5. Reviews Section Header & Write Button
+                // 5. Reviews Section Header & Write/Edit Button
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Reviews 💬',
+                      'Reviews',
                       style: TextStyle(color: textMain, fontSize: 20, fontWeight: FontWeight.w700),
                     ),
                     GestureDetector(
                       onTap: () {
-                        // Trigger the newly added bottom sheet here!
-                        _showWriteReviewSheet(context, widget.dishId);
+                        if (currentUser == null) {
+                           // Prompt login if user tries to review but isn't logged in
+                           ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Please log in to leave a review! 🔒')),
+                           );
+                           return;
+                        }
+                        // 🎯 8. Open modal and pass existingReview (if they have one)
+                        _showWriteReviewSheet(context, widget.dishId, existingReview: existingReview);
                       },
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         decoration: _doodleDecoration(color: accentColor, borderRadius: 20),
                         child: Text(
-                          '+ Write Review',
+                          // 🎯 9. Dynamic Button Label!
+                          hasReviewed ? 'Edit Review' : '+ Write Review',
                           style: TextStyle(color: textMain, fontSize: 14, fontWeight: FontWeight.w600),
                         ),
                       ),

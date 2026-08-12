@@ -11,13 +11,11 @@ class ReviewService {
   ///1.  Submits a new review for a dish
   Future<Review> createReview({
     required int dishId,
-    int userId = 1,
     required int rating,
     String? comment,
   }) async {
     final Map<String, dynamic> body = {
       'dish_id': dishId,
-      'user_id': userId,
       'rating': rating,
       'comment': comment,
     }..removeWhere((key, value) => value == null);
@@ -29,4 +27,24 @@ class ReviewService {
       onSuccess: (data) => Review.fromJson(data as Map<String, dynamic>),
     );
   }
+
+  Future<Review> updateReview({
+    required int reviewId,
+    required int rating,
+    String? comment,
+  }) async {
+    final Map<String, dynamic> body = {
+      'rating': rating,
+      'comment': comment != null && comment.trim().isNotEmpty ? comment.trim() : null,
+    };
+
+   
+    return _apiClient.patchJson<Review>(
+      path: '/reviews/$reviewId', // Or '/reviews/$reviewId' depending on your router prefix
+      endpointName: 'updateReview',
+      body: body,
+      onSuccess: (data) => Review.fromJson(data as Map<String, dynamic>),
+    );
+  }
+
 }

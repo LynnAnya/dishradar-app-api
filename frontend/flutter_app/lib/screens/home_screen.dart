@@ -22,7 +22,7 @@ class _HomeScreenState extends State<HomeScreen> {
   // Adjusted: Softer black/charcoal for lines and text 
   final Color textMain = const Color.fromARGB(255, 48, 48, 48); 
   final Color textMuted = const Color(0xFF757575); 
-  final Color outlineColor = const Color.fromARGB(255, 88, 88, 88); 
+  final Color outlineColor = const Color.fromARGB(255, 159, 156, 156);
 
   // Controllers & Production Helpers
   final TextEditingController _searchController = TextEditingController();

@@ -13,7 +13,7 @@ class ApiClient {
   ApiClient({http.Client? client}) : _client = client ?? http.Client();
 
   // ==========================================
-  // 🔐 NEW: AUTO-HEADER INJECTION
+  //  AUTO-HEADER INJECTION
   // ==========================================
   Future<Map<String, String>> _getHeaders({bool isForm = false}) async {
     final String? token = await TokenStorage.getToken();
@@ -23,7 +23,7 @@ class ApiClient {
       'Accept': 'application/json',
     };
 
-    // 🎯 If the user is logged in, attach the token to every request automatically!
+    // If the user is logged in, attach the token to every request automatically!
     if (token != null) {
       headers['Authorization'] = 'Bearer $token';
     }
@@ -42,7 +42,7 @@ class ApiClient {
     );
 
     try {
-      // 🪄 Attached headers using await _getHeaders()
+      // Attached headers 
       final response = await _client
           .get(uri, headers: await _getHeaders())
           .timeout(const Duration(seconds: 10));
@@ -184,6 +184,40 @@ class ApiClient {
     }
   }
 
+  /// patch 
+  Future<T> patchJson<T>({
+    required String path,
+    required Map<String, dynamic> body,
+    required String endpointName,
+    required T Function(dynamic data) onSuccess,
+  }) async {
+    final url = Uri.parse('$baseUrl$path');
+
+    try {
+      final response = await _client
+          .patch(
+            url,
+            headers: await _getHeaders(),
+            body: jsonEncode(body),
+          )
+          .timeout(const Duration(seconds: 10));
+
+      return _parseResponse<T>(
+        response: response,
+        endpointName: endpointName,
+        onSuccess: onSuccess,
+      );
+    } on SocketException catch (e, stack) {
+      developer.log('Network unreachable', error: e, stackTrace: stack, name: 'ApiClient');
+      throw NetworkException('No internet connection.', e);
+    } on TimeoutException catch (e, stack) {
+      developer.log('Request timed out', error: e, stackTrace: stack, name: 'ApiClient');
+      throw NetworkException('Server took too long to respond.', e);
+    } catch (e) {
+      if (e is NetworkException) rethrow;
+      throw NetworkException('Unexpected request error: $e', e);
+    }
+  }
 
   /// Standardized HTTP response parsing & error extraction
   T _parseResponse<T>({

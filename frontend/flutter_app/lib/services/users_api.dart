@@ -11,7 +11,6 @@ class UsersApi {
   UsersApi({ApiClient? apiClient}) : _apiClient = apiClient ?? ApiClient();
 
   /// Fetch Current User Profile
-  /// Hits GET /users/me and converts the response into a Dart User object
   Future<User> getUserProfile() async {
     return _apiClient.getJson<User>(
       path: '/users/me', 
@@ -19,14 +18,12 @@ class UsersApi {
       onSuccess: (data) => User.fromJson(data as Map<String, dynamic>),
     );
   }
-
-  /// 🚨 Delete Entire User Account
-  /// Hits DELETE /users/me and returns void (Because the backend returns 204 No Content)
+  ///  Delete User Account
   Future<void> deleteUserAccount() async {
     return _apiClient.deleteJson<void>(
       path: '/users/me', 
       endpointName: 'deleteUserAccount',
-      onSuccess: (_) {}, // Do nothing with the body since 204 has no content
+      onSuccess: (_) {}, 
     );
   }
 }

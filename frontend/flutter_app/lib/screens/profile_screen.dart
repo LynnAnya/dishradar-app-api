@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart'; // 📦 1. Import Riverpod
+import 'package:flutter_riverpod/flutter_riverpod.dart'; 
 import 'auth_screen.dart';
-import '../providers/user_provider.dart'; // 🎒 2. Import your Riverpod Manager
+import '../providers/user_provider.dart'; 
 
-// 3. ✨ Change to ConsumerStatefulWidget
+// 3. Change to ConsumerStatefulWidget
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
@@ -24,9 +24,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   // This is purely local UI state, so it stays here! No need to put this in Riverpod.
   bool _notificationsEnabled = true;
 
-  // ❌ DELETED all the manual _username, _email, and _isLoading variables!
-  // ❌ DELETED initState() and _loadUserProfile()! Riverpod does this automatically.
-
   BoxDecoration _doodleDecoration({Color? color, double borderRadius = 12.5}) {
     return BoxDecoration(
       color: color ?? cardColor,
@@ -42,7 +39,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
-  // 🗑️ The final delete action
+  // The final delete action
   Future<void> _executeDeleteAccount() async {
     Navigator.of(context).pop(); // Pop the confirmation dialog
     
@@ -75,7 +72,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     }
   }
 
-  // ⚠️ Step 2 of Delete: Are you sure?
+  //  Step 2 of Delete: Are you sure?
   void _showDeleteConfirmation() {
     showDialog(
       context: context,
@@ -163,7 +160,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // 🎒 5. Listen to the Riverpod state!
+    //  5. Listen to the Riverpod state!
     final userState = ref.watch(userProvider);
 
     return Scaffold(
@@ -177,7 +174,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           style: TextStyle(color: textMain, fontWeight: FontWeight.w600, fontSize: 22),
         ),
       ),
-      // ⚡ 6. Use .when() to automatically draw the correct UI based on the API status
+      // 6. Use .when() to automatically draw the correct UI based on the API status
       body: userState.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(child: Text('Error: $err', style: const TextStyle(color: Colors.redAccent))),

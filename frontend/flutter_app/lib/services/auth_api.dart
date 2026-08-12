@@ -1,5 +1,6 @@
 import 'package:http/http.dart' as http;
 import '../core/network/api_client.dart';
+import '../models/user.dart';
 
 class Token {
   final String accessToken;
@@ -15,31 +16,6 @@ class Token {
   }
 }
 
-class UserPrivate {
-  final int id;
-  final String username;
-  final String email;
-  final String? imageFile;
-  final String? imagePath;
-
-  UserPrivate({
-    required this.id,
-    required this.username,
-    required this.email,
-    this.imageFile,
-    this.imagePath,
-  });
-
-  factory UserPrivate.fromJson(Map<String, dynamic> json) {
-    return UserPrivate(
-      id: json['id'] as int,
-      username: json['username'] as String,
-      email: json['email'] as String,
-      imageFile: json['image_file'] as String?,
-      imagePath: json['image_path'] as String?,
-    );
-  }
-}
 
 /// Service class handling API calls for Registration & Login
 class AuthApi {
@@ -50,12 +26,12 @@ class AuthApi {
       : _apiClient = apiClient ?? ApiClient(client: client);
 
   /// 1. Register User 
-  Future<UserPrivate> registerUser({
+  Future<User> registerUser({
     required String username,
     required String email,
     required String password,
   }) async {
-    return _apiClient.postJson<UserPrivate>(
+    return _apiClient.postJson<User>(
       path: '/users',
       endpointName: 'registerUser',
       body: {
@@ -63,7 +39,7 @@ class AuthApi {
         'email': email,
         'password': password,
       },
-      onSuccess: (data) => UserPrivate.fromJson(data as Map<String, dynamic>),
+      onSuccess: (data) => User.fromJson(data as Map<String, dynamic>),
     );
   }
 

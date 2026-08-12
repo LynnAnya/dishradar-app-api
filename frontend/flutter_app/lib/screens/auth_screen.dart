@@ -87,16 +87,30 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
           Navigator.pushReplacementNamed(context, '/home');
         }
       } else {
-        // --- REGISTER FLOW ---
+        // --- REGISTER ---
+        final username = _usernameController.text.trim();
+        final email = _emailController.text.trim();
+        final password = _passwordController.text.trim();
+
+        if (password.length < 8) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Password must be at least 8 characters long.'),
+              backgroundColor: Colors.orangeAccent,
+            ),
+          );
+          return;
+        }
+
         await _authApi.registerUser(
-          username: _usernameController.text.trim(),
-          email: _emailController.text.trim(),
-          password: _passwordController.text.trim(),
+          username: username,
+          email: email,
+          password: password,
         );
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Account created! Please log in. ✨')),
+            SnackBar(content: Text('Account $username ($email) created! Please log in. ')),
           );
           // Switch back to Login view automatically so the user can log in
           setState(() {
