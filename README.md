@@ -3,8 +3,7 @@
 ## Work in progress 
 <p align="center">
   <img src="images/meal_app.gif" width="250" />
-  <img src="images/login_screen.png" width="250" />
-  <img src="images/profile_screen.png" width="250" />
+  <img src="images/filter_review_screen.gif" width="250" />
 </p>
 
 
