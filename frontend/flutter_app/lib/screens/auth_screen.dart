@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart'; // 📦 1. Import Riverpod
+import 'package:flutter_riverpod/flutter_riverpod.dart'; 
 import '../services/auth_api.dart';
 import '../core/storage/token_storage.dart'; 
-import '../providers/user_provider.dart'; // 🎒 2. Import your Riverpod Manager
+import '../providers/user_provider.dart'; 
 
 // 3. ✨ Change to ConsumerStatefulWidget
 class AuthScreen extends ConsumerStatefulWidget {
@@ -150,7 +150,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  'Meal Finder 🍔',
+                  '🌯 Meal Finder',
                   style: TextStyle(
                     color: textMain,
                     fontSize: 32,
@@ -160,7 +160,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                 const SizedBox(height: 8),
                 Text(
                   _isLogin 
-                      ? 'Welcome back! Sign in to view your profile.' 
+                      ? 'Welcome back! Get ready to find your next meal' 
                       : 'Create an account to join the community!',
                   style: TextStyle(color: textMuted, fontSize: 14),
                   textAlign: TextAlign.center,
@@ -245,7 +245,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                                   ),
                                 )
                               : Text(
-                                  _isLogin ? 'Sign In 🔑' : 'Register ✨',
+                                  _isLogin ? 'Sign In' : 'Register',
                                   style: TextStyle(
                                     color: textMain,
                                     fontSize: 16,
