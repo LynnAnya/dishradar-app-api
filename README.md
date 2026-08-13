@@ -1,4 +1,4 @@
-# Dish Radar - Find Your Next Meal
+# Meal Finder - Find Your Next Meal
 
 ## Work in progress 
 <p align="center">
