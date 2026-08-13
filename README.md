@@ -1,9 +1,11 @@
 # Dish Radar - Find Your Next Meal
 
 ## Work in progress 
-![Home Screen](images/meal_app.gif)
-![Login Screen](images/login_screen.png)
-![Profile Screen](images/profile_screen.png)
+<p align="center">
+  <img src="images/meal_app.gif" width="250" />
+  <img src="images/login_screen.png" width="250" />
+  <img src="images/profile_screen.png" width="250" />
+</p>
 
 
 
