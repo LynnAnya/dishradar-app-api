@@ -1,21 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart'; // 🎯 1. Imported Riverpod
+import 'package:flutter_riverpod/flutter_riverpod.dart'; 
 import '../models/dish.dart';
-import '../models/review.dart'; // 🎯 Imported Review model
-import '../providers/user_provider.dart'; // 🎯 Imported UserProvider
+import '../models/review.dart'; 
+import '../providers/user_provider.dart'; 
+import '../providers/fav_provider.dart';
 import '../services/dishes_api.dart'; 
 import '../services/reviews_api.dart';
 
 // 🎯 2. Changed to ConsumerStatefulWidget to access Riverpod state
 class DishDetailScreen extends ConsumerStatefulWidget {
   final int dishId;
-
   const DishDetailScreen({super.key, required this.dishId});
 
   @override
   ConsumerState<DishDetailScreen> createState() => _DishDetailScreenState();
 }
-
 class _DishDetailScreenState extends ConsumerState<DishDetailScreen> {
   // 🎨 Exact Same Theme Colors
   final Color bgColor = const Color(0xFFFEFDF7);
@@ -25,13 +24,11 @@ class _DishDetailScreenState extends ConsumerState<DishDetailScreen> {
   final Color textMain = const Color.fromARGB(255, 48, 48, 48);
   final Color textMuted = const Color(0xFF757575);
   final Color outlineColor = const Color.fromARGB(255, 159, 156, 156);
-
   late Future<DishDetail> _dishDetailFuture;
 
   @override
   void initState() {
     super.initState();
-    // Fetch the detailed model (which includes reviews and restaurant info)
     _dishDetailFuture = DishService().fetchDishDetail(widget.dishId);
   }
 
@@ -50,7 +47,6 @@ class _DishDetailScreenState extends ConsumerState<DishDetailScreen> {
       ],
     );
   }
-
   //  Write/Edit Review Bottom Sheet Overlay
   //  3. Added optional existingReview parameter
   void _showWriteReviewSheet(BuildContext context, int dishId, {Review? existingReview}) {
@@ -143,11 +139,9 @@ class _DishDetailScreenState extends ConsumerState<DishDetailScreen> {
                           : () async {
                               final String rawComment = commentController.text.trim();
                               final String? comment = rawComment.isEmpty ? null : rawComment;
-                              
                               setModalState(() {
                                 isSubmitting = true;
                               });
-
                               try {
                                 //  5. Update vs Create
                                 if (isEditing) {
@@ -165,11 +159,11 @@ class _DishDetailScreenState extends ConsumerState<DishDetailScreen> {
                                 }
                                 
                                 if (context.mounted) {
-                                  Navigator.pop(context); // Close the popup
+                                  Navigator.pop(context);
                                   
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
-                                      content: Text(isEditing ? 'Review updated!' : 'Review submitted! 🎉'),
+                                      content: Text(isEditing ? 'Review updated!' : 'Review submitted!s'),
                                       backgroundColor: outlineColor,
                                       behavior: SnackBarBehavior.floating,
                                       shape: RoundedRectangleBorder(
@@ -177,7 +171,6 @@ class _DishDetailScreenState extends ConsumerState<DishDetailScreen> {
                                       ),
                                     ),
                                   );
-
                                   // Refresh the page data to show the new review
                                   setState(() {
                                     _dishDetailFuture = DishService().fetchDishDetail(widget.dishId);
@@ -246,12 +239,13 @@ class _DishDetailScreenState extends ConsumerState<DishDetailScreen> {
       },
     );
   }
-
   @override
   Widget build(BuildContext context) {
     // 🎯 6. Read the current logged-in user from Riverpod state
     final userState = ref.watch(userProvider);
     final currentUser = userState.value;
+    final favSet = ref.watch(favouritesProvider).value ?? <int>{};
+    final isFav = favSet.contains(widget.dishId);
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -272,7 +266,6 @@ class _DishDetailScreenState extends ConsumerState<DishDetailScreen> {
           }
 
           final dish = snapshot.data!;
-
           // 🎯 7. Check if this specific user has already reviewed the dish
           Review? existingReview;
           if (currentUser != null) {
@@ -292,22 +285,45 @@ class _DishDetailScreenState extends ConsumerState<DishDetailScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // 1. Top Image with Doodle Border
-                Container(
-                  width: double.infinity,
-                  height: 250,
-                  decoration: _doodleDecoration(borderRadius: 16),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(15),
-                    child: dish.imageUrl != null && dish.imageUrl!.isNotEmpty
-                        ? Image.network(dish.imageUrl!, fit: BoxFit.cover)
-                        : Container(
-                            color: const Color(0xFFF0F0F0),
-                            child: Icon(Icons.fastfood_outlined, color: textMain, size: 80),
+                Stack(
+                  children: [
+                    // The Image Container
+                    Container(
+                      width: double.infinity,
+                      height: 250,
+                      decoration: _doodleDecoration(borderRadius: 16),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(15),
+                        child: dish.imageUrl != null && dish.imageUrl!.isNotEmpty
+                            ? Image.network(dish.imageUrl!, fit: BoxFit.cover)
+                            : Container(
+                                color: const Color(0xFFF0F0F0),
+                                child: Icon(Icons.fastfood_outlined, color: textMain, size: 80),
+                              ),
+                      ),
+                    ),
+
+                    // ❤️ Floating Heart Button on Top-Right Corner
+                    Positioned(
+                      top: 12,
+                      right: 12,
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () {ref.read(favouritesProvider.notifier).toggle(widget.dishId);
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Icon(
+                            isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                            color: isFav ? Colors.redAccent : textMain,
+                            size: 28, // Clean heart icon with no circular box/border
                           ),
-                  ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 20),
-
                 // 2. Dish Info (Unboxed Style)
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 4.0),
@@ -415,7 +431,7 @@ class _DishDetailScreenState extends ConsumerState<DishDetailScreen> {
                         if (currentUser == null) {
                            // Prompt login if user tries to review but isn't logged in
                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Please log in to leave a review! 🔒')),
+                              const SnackBar(content: Text('Please log in to leave a review!')),
                            );
                            return;
                         }
@@ -436,7 +452,7 @@ class _DishDetailScreenState extends ConsumerState<DishDetailScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // 6. Reviews List (Handling Empty State)
+                // 6. Reviews List
                 if (dish.reviews.isEmpty)
                   Container(
                     width: double.infinity,

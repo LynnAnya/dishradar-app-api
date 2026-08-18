@@ -65,4 +65,36 @@ class DishService {
       onSuccess: (data) => DishDetail.fromJson(data as Map<String, dynamic>),
     );
   }
+
+  ///3. Toggle favourite for a specific dish
+  Future<bool> toggleFavourite(int dishId) async {
+    return await _apiClient.postJson<bool>(
+      path: '/dishes/$dishId/favourite',
+      body: {}, // Empty body as dish_id is in the path
+      endpointName: 'toggleFavourite',
+      onSuccess: (data) {
+        if (data is Map<String, dynamic> && data.containsKey('is_favourite')) {
+          return data['is_favourite'] as bool;
+        }
+        return false;
+      },
+    );
+  }
+
+  /// 4. Fetch all favorited dishes for the logged-in user: GET /users/me/favourites
+  Future<List<Dish>> fetchFavourites() async {
+    return await _apiClient.getJson<List<Dish>>(
+      path: '/users/me/favourites',
+      endpointName: 'Fetch Favourites',
+      onSuccess: (data) {
+        if (data is List) {
+          return data
+              .map((item) => Dish.fromJson(item as Map<String, dynamic>))
+              .toList();
+        }
+        return <Dish>[];
+      },
+    );
+  }
+
 }

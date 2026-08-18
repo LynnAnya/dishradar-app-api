@@ -32,10 +32,7 @@ class Dish {
 
   factory Dish.fromJson(Map<String, dynamic> json) {
     return Dish(
-      // 🎯 Strict Primary Key (No fake fallback)
       id: json['dish_id'] as int,
-
-      // 🎯 Direct field matches from FastAPI JSON
       name: json['dish_name'] as String? ?? 'Unknown Dish',
       price: (json['price'] as num?)?.toDouble() ?? 0.0,
       rating: (json['average_rating'] as num?)?.toDouble() ?? 0.0,
@@ -43,8 +40,6 @@ class Dish {
       isSpicy: json['is_spicy'] as bool? ?? false,
       description: json['description'] as String?,
       imageUrl: json['image_url'] as String?,
-
-      // 🎯 Restaurant fields flattened by FastAPI validation_alias
       restaurantId: json['restaurant_id'] as int?,
       restaurantName: json['restaurant_name'] as String?,
       restaurantAddress: json['restaurant_address'] as String?,

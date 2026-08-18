@@ -5,7 +5,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from PIL import UnidentifiedImageError
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import selectinload, joinedload
 from starlette.concurrency import run_in_threadpool
 
 import models
@@ -239,4 +239,18 @@ async def delete_user_picture(
 
     delete_profile_image(old_filename)
     return current_user
-    
+
+
+#user favourite dishes 
+@router.get("/me/favourites", response_model=list[DishResponse], name="favourite_dishes")
+async def get_user_favourites(current_user: CurrentUser,db: Annotated[AsyncSession, Depends(get_db)]):    
+    query = (
+        select(models.Dish)
+        .join(models.Favourite, models.Dish.id == models.Favourite.dish_id)
+        .where(models.Favourite.user_id == current_user.id)
+        .options(joinedload(models.Dish.restaurant))
+        .order_by(models.Favourite.id.desc(),) 
+    )
+    result = await db.execute(query)
+    fav_dishes = result.scalars().unique().all()
+    return fav_dishes

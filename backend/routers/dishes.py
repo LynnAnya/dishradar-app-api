@@ -130,9 +130,9 @@ async def toggle_dish_favourite(
     if existing_favourite:
         await db.delete(existing_favourite)
         await db.commit()
-        return {"is_favourite": False, "message": "Removed from favorites 🤍"}
+        return {"is_favourite": False, "message": "Removed from favorites"}
 
     new_favourite = models.Favourite(user_id=current_user.id, dish_id=dish_id)
     db.add(new_favourite)
     await db.commit()
-    return {"is_favourite": True, "message": "Added to favorites ❤️"}
+    return {"is_favourite": True, "message": "Added to favorites"}

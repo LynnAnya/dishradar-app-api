@@ -11,7 +11,6 @@ class HomeScreen extends StatefulWidget {
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
-
 class _HomeScreenState extends State<HomeScreen> {
   // 🎨 Softer, Lighter Playful Theme Colors
   final Color bgColor = const Color(0xFFFEFDF7); 
@@ -317,9 +316,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-
   // --- Filter & Sort UI Builders ---
-
   Widget _buildDoodleChip({required String label, required bool isSelected, required VoidCallback onTap}) {
     return GestureDetector(
       onTap: onTap,
@@ -467,7 +464,6 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-
   // --- 1-Column Horizontal Card Layout ---
   Widget _buildDishCard(Dish dish) {
     final city = _extractCity(dish.restaurantAddress);
@@ -511,7 +507,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             const SizedBox(width: 16),
-
             // 2. Dish & Restaurant Details
             Expanded(
               child: Column(
@@ -546,9 +541,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ],
                     ),
                   ],
-
                   const SizedBox(height: 12),
-
                   // Price and Rating Badges
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -565,8 +558,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           '\$${dish.price.toStringAsFixed(2)}',
                           style: TextStyle(color: textMain, fontSize: 14, fontWeight: FontWeight.w600),
                         ),
-                      ),
-                      
+                      ),  
                       // Rating Badge
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

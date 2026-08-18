@@ -84,7 +84,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
 
         if (mounted) {
           // Navigate to home
-          Navigator.pushReplacementNamed(context, '/home');
+          Navigator.pushReplacementNamed(context, '/main');
         }
       } else {
         // --- REGISTER ---

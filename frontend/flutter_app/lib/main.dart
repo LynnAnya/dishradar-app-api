@@ -1,53 +1,48 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart'; // 1. Import Riverpod
-import 'screens/home_screen.dart'; 
-import 'screens/auth_screen.dart'; 
-import 'providers/user_provider.dart'; // Import your new provider
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'screens/main_screen.dart'; 
+import 'screens/auth_screen.dart';
+import 'providers/user_provider.dart';
 
 void main() {
   runApp(
-    // 2. Wrap your entire app in ProviderScope (The Master Backpack)
     const ProviderScope(
-      child: DishRadarApp(),
+      child: MealFinderApp(),
     ),
   );
 }
 
-// 3. Change StatelessWidget to ConsumerWidget
-class DishRadarApp extends ConsumerWidget {
-  const DishRadarApp({super.key});
+class MealFinderApp extends ConsumerWidget {
+  const MealFinderApp({super.key});
 
   @override
-  // 4. Add WidgetRef to the build method
   Widget build(BuildContext context, WidgetRef ref) {
-    
-    // 5. 🎒 Listen to the UserProvider right at the root of your app!
     final userState = ref.watch(userProvider);
 
     return MaterialApp(
-      title: 'DishRadar',
+      title: 'MealFinder',
       debugShowCheckedModeBanner: false,
       routes: {
-        '/home': (context) => const HomeScreen(),
+        '/main': (context) => const MainScreen(), 
         '/auth': (context) => const AuthScreen(),
       },
       
-      // 6. ✨ Riverpod magically handles the Startup Flow!
+      // Startup Flow Handler
       home: userState.when(
-        // App just opened: Waiting for the backend to verify the user
+        // App is checking token on launch
         loading: () => const Scaffold(
+          backgroundColor: Color(0xFFFEFDF7),
           body: Center(child: CircularProgressIndicator()),
         ),
         
-        // Token is expired, missing, or internet failed -> Kick to Login
         error: (error, stack) => const AuthScreen(),
         
-        // Backend answered: Did we get a user?
+        // Backend verification result
         data: (user) {
           if (user != null) {
-            return const HomeScreen(); // Valid user! Welcome in.
+            return const MainScreen(); 
           } else {
-            return const AuthScreen(); // No user, please log in.
+            return const AuthScreen(); 
           }
         },
       ),
